@@ -1,13 +1,4 @@
 module.exports = {
-    module: {
-        rules: [
-            {
-                resolve: {
-                    fullySpecified: false,
-                },
-            },
-        ],
-    },
     devServer: {
         headers: {
             'Access-Control-Allow-Origin': 'http://localhost:8888',
