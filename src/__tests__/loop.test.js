@@ -1,20 +1,20 @@
 import { Loop } from '../loop';
 
-let future;
+let f;
 
 beforeEach(() => {
     const loop = new Loop();
-    future = loop.createFuture();
+    f = loop.createFuture();
 });
 
 test('sets result', async () => {
     const value = {};
-    future.setResult(value);
-    await expect(future).resolves.toBe(value);
+    f.setResult(value);
+    await expect(f).resolves.toBe(value);
 });
 
 test('sets exception', async () => {
     const error = new Error();
-    future.setException(error);
-    await expect(future).rejects.toThrow(error);
+    f.setException(error);
+    await expect(f).rejects.toThrow(error);
 });
