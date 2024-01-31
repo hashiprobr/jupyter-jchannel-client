@@ -1,6 +1,6 @@
 {
   "name": "jupyter-jchannel-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "JavaScript client for jupyter-jchannel",
   "homepage": "https://github.com/hashiprobr/jupyter-jchannel-client#readme",
   "bugs": {
