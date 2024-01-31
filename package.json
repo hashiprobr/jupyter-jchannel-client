@@ -14,6 +14,10 @@
   "author": "Marcelo Hashimoto <marcelo.hashimoto@gmail.com>",
   "type": "module",
   "main": "src/index.js",
+  "files": [
+    "src",
+    "dist"
+  ],
   "scripts": {
     "build": "webpack --mode production --devtool source-map",
     "doc": "jsdoc src",
