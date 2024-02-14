@@ -1,5 +1,3 @@
 {
-    "jest.autoRun": {
-        "watch": false
-    }
+    "jest.runMode": "on-demand"
 }

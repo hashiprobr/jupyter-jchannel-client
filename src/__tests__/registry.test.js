@@ -1,6 +1,7 @@
 import loop from '../loop';
-import { Registry } from '../registry';
+
 import { jest } from '@jest/globals';
+import { Registry } from '../registry';
 
 let r;
 
@@ -9,7 +10,8 @@ function createFuture() {
 }
 
 beforeEach(() => {
-    jest.spyOn(loop, 'createFuture').mockImplementation(createFuture);
+    const spy = jest.spyOn(loop, 'createFuture');
+    spy.mockImplementation(createFuture);
     r = new Registry();
 });
 

@@ -101,7 +101,6 @@ module.exports = {
         'no-sequences': ['warn'],
         'no-throw-literal': ['warn'],
         'no-undef-init': ['warn'],
-        'no-underscore-dangle': ['warn'],
         'no-unneeded-ternary': ['warn'],
         'no-unused-expressions': ['warn'],
         'no-unused-labels': ['warn'],
