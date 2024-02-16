@@ -12,7 +12,7 @@ export class Client {
 
             socket.addEventListener('error', () => {
                 if (open) {
-                    console.error('Client closed due to an error');
+                    console.error('Client disconnected due to an error');
                 } else {
                     reject(new Error('Client could not connect'));
                 }

@@ -123,7 +123,7 @@ test('connects, pongs, and disconnects', async () => {
     expect(s.heartbeat).toBe(true);
 });
 
-test('closes due to an error', async () => {
+test('disconnects due to an error', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
     c = start();
