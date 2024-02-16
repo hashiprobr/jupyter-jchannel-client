@@ -22,7 +22,7 @@
     "build": "webpack --mode production --devtool source-map",
     "doc": "jsdoc src",
     "start": "webpack serve --mode development --devtool eval-source-map",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --silent"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "jest": {
     "coverageReporters": [

@@ -3,12 +3,19 @@ export class Client {
         const socket = new WebSocket(`${url}/socket`);
 
         this.connection = new Promise((resolve, reject) => {
+            let open = false;
+
             socket.addEventListener('open', () => {
+                open = true;
                 resolve(socket);
             });
 
             socket.addEventListener('error', () => {
-                reject(new Error('Client could not connect'));
+                if (open) {
+                    console.error('Client closed due to an error');
+                } else {
+                    reject(new Error('Client could not connect'));
+                }
             });
         });
 
@@ -28,6 +35,9 @@ export class Client {
                     delete body.type;
 
                     switch (bodyType) {
+                        case 'debug':
+                            socket.dispatchEvent(new Event('error'));
+                            break;
                         default:
                             console.error(`Received unexpected body type ${bodyType}`);
                     }

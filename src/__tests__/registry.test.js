@@ -15,6 +15,10 @@ beforeEach(() => {
     r = new Registry();
 });
 
+afterEach(() => {
+    jest.restoreAllMocks();
+});
+
 test('stores and retrieves twice', () => {
     const future0 = loop.createFuture();
     const key0 = r.store(future0);

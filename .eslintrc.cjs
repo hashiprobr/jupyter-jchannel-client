@@ -83,7 +83,6 @@ module.exports = {
         'no-iterator': ['warn'],
         'no-label-var': ['warn'],
         'no-lone-blocks': ['warn'],
-        'no-lonely-if': ['warn'],
         'no-loop-func': ['warn'],
         'no-multi-assign': ['warn'],
         'no-multi-str': ['warn'],

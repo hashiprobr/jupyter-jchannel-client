@@ -101,6 +101,10 @@ beforeEach(() => {
     };
 });
 
+afterEach(() => {
+    jest.restoreAllMocks();
+});
+
 test('does not connect and does not send', async () => {
     c = start();
     await expect(c.connection).rejects.toThrow(Error);
@@ -117,6 +121,18 @@ test('connects, pongs, and disconnects', async () => {
     await c.disconnection;
     await s.stop();
     expect(s.heartbeat).toBe(true);
+});
+
+test('closes due to an error', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    c = start();
+    await c.connection;
+    await c._send('debug');
+    await c._send('close');
+    await c.disconnection;
+    await s.stop();
+    expect(error).toHaveBeenCalledWith(expect.any(String));
 });
 
 test('receives unexpected body type', async () => {
