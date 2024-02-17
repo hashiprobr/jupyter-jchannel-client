@@ -12,7 +12,7 @@ export class Client {
 
             socket.addEventListener('error', () => {
                 if (open) {
-                    console.error('Client disconnected due to an error');
+                    console.error('Caught unexpected exception');
                 } else {
                     reject(new Error('Client could not connect'));
                 }
@@ -35,9 +35,6 @@ export class Client {
                     delete body.type;
 
                     switch (bodyType) {
-                        case 'debug':
-                            socket.dispatchEvent(new Event('error'));
-                            break;
                         default:
                             console.error(`Received unexpected body type ${bodyType}`);
                     }
@@ -46,6 +43,8 @@ export class Client {
                 }
             } catch (error) {
                 console.error(error);
+                socket.dispatchEvent(new Event('error'));
+                socket.close();
             }
         });
     }

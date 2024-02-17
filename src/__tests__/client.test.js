@@ -13,8 +13,6 @@ function start() {
 beforeEach(() => {
     s = http.createServer();
 
-    s.heartbeat = false;
-
     s.start = () => {
         return new Promise((resolve) => {
             s.on('listening', () => {
@@ -36,42 +34,51 @@ beforeEach(() => {
                     '\r\n',
                 ].join('\r\n'));
 
+                s.heartbeat = false;
+
                 s.disconnection = new Promise((resolve) => {
+                    let open = true;
+
                     socket.on('data', (chunk) => {
                         while (chunk.length > 0) {
-                            if (chunk[0] === 0b10001000) {
+                            const code = chunk[0] & 0b00001111;
+                            const end = 6 + chunk[1] & 0b01111111;
+
+                            const mask = chunk.subarray(2, 6);
+                            const payload = chunk.subarray(6, end);
+
+                            for (let i = 0; i < payload.length; i++) {
+                                payload[i] ^= mask[i % 4];
+                            }
+
+                            if (code === 0x8) {
+                                if (open) {
+                                    socket.write(new Uint8Array([0b10001000, payload.length, ...payload]));
+                                }
                                 socket.destroy();
                                 resolve();
                                 break;
                             }
 
-                            const end = 6 + chunk[1] - 0b10000000;
-
-                            if (chunk[0] === 0b10001010) {
+                            if (code === 0xA) {
                                 s.heartbeat = true;
                             } else {
-                                const mask = chunk.subarray(2, 6);
-                                const payload = chunk.subarray(6, end);
-
-                                for (let i = 0; i < payload.length; i++) {
-                                    payload[i] ^= mask[i % 4];
-                                }
-
                                 const data = payload.toString();
                                 const body = JSON.parse(data);
 
                                 switch (body.type) {
-                                    case 'heart':
-                                        socket.write(new Uint8Array([0b10001001, 0b00000000]));
-                                        break;
                                     case 'close':
-                                        socket.write(new Uint8Array([0b10001000, 0b00000000]));
+                                        socket.write(new Uint8Array([0b10001000, 0]));
+                                        open = false;
+                                        break;
+                                    case 'heart':
+                                        socket.write(new Uint8Array([0b10001001, 0]));
                                         break;
                                     case 'bytes':
-                                        socket.write(new Uint8Array([0b10000010, 0b00000000]));
+                                        socket.write(new Uint8Array([0b10000010, 0]));
                                         break;
                                     case 'empty':
-                                        socket.write(new Uint8Array([0b10000001, 0b00000000]));
+                                        socket.write(new Uint8Array([0b10000001, 0]));
                                         break;
                                     default:
                                         socket.write(new Uint8Array([0b10000001, payload.length, ...payload]));
@@ -123,18 +130,6 @@ test('connects, pongs, and disconnects', async () => {
     expect(s.heartbeat).toBe(true);
 });
 
-test('disconnects due to an error', async () => {
-    const error = jest.spyOn(console, 'error');
-    await s.start();
-    c = start();
-    await c.connection;
-    await c._send('debug');
-    await c._send('close');
-    await c.disconnection;
-    await s.stop();
-    expect(error).toHaveBeenCalledWith(expect.any(String));
-});
-
 test('receives unexpected body type', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
@@ -144,6 +139,7 @@ test('receives unexpected body type', async () => {
     await c._send('close');
     await c.disconnection;
     await s.stop();
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith(expect.any(String));
 });
 
@@ -156,6 +152,7 @@ test('receives unexpected message type', async () => {
     await c._send('close');
     await c.disconnection;
     await s.stop();
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith(expect.any(String));
 });
 
@@ -165,8 +162,9 @@ test('catches unexpected exception', async () => {
     c = start();
     await c.connection;
     await c._send('empty');
-    await c._send('close');
     await c.disconnection;
     await s.stop();
-    expect(error).toHaveBeenCalledWith(expect.any(Error));
+    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
 });
