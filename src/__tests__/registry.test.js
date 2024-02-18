@@ -1,7 +1,8 @@
 import loop from '../loop';
 
-import { jest } from '@jest/globals';
 import { Registry } from '../registry';
+
+jest.mock('../loop');
 
 let r;
 
@@ -9,14 +10,12 @@ function createFuture() {
     return new Promise(() => { });
 }
 
-beforeEach(() => {
-    const spy = jest.spyOn(loop, 'createFuture');
-    spy.mockImplementation(createFuture);
-    r = new Registry();
+beforeAll(() => {
+    loop.createFuture.mockImplementation(createFuture);
 });
 
-afterEach(() => {
-    jest.restoreAllMocks();
+beforeEach(() => {
+    r = new Registry();
 });
 
 test('stores and retrieves twice', () => {

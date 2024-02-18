@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import http from 'http';
 
-import { jest } from '@jest/globals';
 import { Client } from '../client';
 
 let c, s;
