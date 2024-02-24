@@ -15,6 +15,10 @@ module.exports = {
         },
     },
     output: {
-        library: 'jchannel',
+        library: {
+            name: 'jchannel',
+            type: 'global',
+            export: 'default',
+        },
     },
 };
