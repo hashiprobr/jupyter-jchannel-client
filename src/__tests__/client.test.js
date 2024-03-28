@@ -2,6 +2,13 @@ import crypto from 'crypto';
 import http from 'http';
 
 import { Client } from '../client';
+import { Channel } from '../channel';
+
+jest.mock('../channel', () => {
+    return {
+        Channel: jest.fn(),
+    };
+});
 
 let c, s;
 
@@ -129,30 +136,17 @@ test('connects, pongs, and disconnects', async () => {
     expect(s.heartbeat).toBe(true);
 });
 
-test('receives unexpected body type', async () => {
-    const error = jest.spyOn(console, 'error');
-    await s.start();
-    c = start();
-    await c.connection;
-    await c._send('error');
-    await c._send('close');
-    await c.disconnection;
-    await s.stop();
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(String));
-});
-
 test('receives unexpected message type', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
     c = start();
     await c.connection;
     await c._send('bytes');
-    await c._send('close');
     await c.disconnection;
     await s.stop();
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(String));
+    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
 });
 
 test('catches unexpected exception', async () => {
@@ -161,6 +155,19 @@ test('catches unexpected exception', async () => {
     c = start();
     await c.connection;
     await c._send('empty');
+    await c.disconnection;
+    await s.stop();
+    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
+});
+
+test('receives unexpected body type', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    c = start();
+    await c.connection;
+    await c._send('error');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);

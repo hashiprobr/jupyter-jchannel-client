@@ -6,14 +6,14 @@ export class Index {
     }
 
     start(url) {
-        const next = this._start(url, this.clients[url]);
+        const next = this.#start(url, this.clients[url]);
 
         this.clients[url] = next;
 
         return next;
     }
 
-    async _start(url, prev) {
+    async #start(url, prev) {
         if (prev) {
             const client = await prev;
 
@@ -24,7 +24,7 @@ export class Index {
                     return client;
                 }
             } catch (error) {
-                console.warn('Unexpected client restart');
+                console.warn('Unexpected client stoppage');
             }
         }
 
