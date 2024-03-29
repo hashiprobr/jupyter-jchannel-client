@@ -39,8 +39,8 @@ export class Client {
 
                 this.#check(body, 'future');
                 const key = this.#get(body, 'channel');
-                let bodyType = this.#pop(body, 'type');
                 let payload = this.#pop(body, 'payload');
+                let bodyType = this.#pop(body, 'type');
 
                 if (bodyType === 'open') {
                     if (typeof payload === 'string') {
@@ -70,6 +70,13 @@ export class Client {
                     if (channel) {
                         try {
                             switch (bodyType) {
+                                case 'echo':
+                                    bodyType = 'result';
+                                    break;
+                                case 'call':
+                                    payload = channel.handleCall(payload.name, ...payload.args);
+                                    bodyType = 'result';
+                                    break;
                                 default:
                                     payload = `Received unexpected body type ${bodyType}`;
                                     bodyType = 'exception';
@@ -82,16 +89,12 @@ export class Client {
                         console.warn('Unexpected channel closure');
 
                         payload = null;
-                        bodyType = 'open';
+                        bodyType = 'closed';
                     }
                 }
 
-                if (payload instanceof ReadableStream) {
-                    throw new Error('Not implemented yet');
-                } else {
-                    body.payload = payload;
-                    this._send(bodyType, body);
-                }
+                body.payload = payload;
+                this._send(bodyType, body);
             } catch (error) {
                 console.error(error);
 
@@ -116,7 +119,7 @@ export class Client {
     #message(error) {
         console.error(error);
 
-        if (error.message) {
+        if (typeof error.message === 'string' && error.message) {
             return error.message;
         }
         return 'Check the browser console for details';
