@@ -215,6 +215,7 @@ test('opens', async () => {
     await open('() => 0');
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe(0);
     expect(s.body.channel).toBe(CHANNEL_KEY);
@@ -229,10 +230,12 @@ test('does not open with invalid code', async () => {
     await open('() =>');
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith(expect.any(Error));
 });
 
@@ -243,6 +246,7 @@ test('does not open with non-function code', async () => {
     await open('0');
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
@@ -256,6 +260,7 @@ test('does not open with non-string code', async () => {
     await open(0);
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
@@ -270,6 +275,7 @@ test('echoes', async () => {
     await send('echo', 1);
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe(1);
     expect(s.body.channel).toBe(CHANNEL_KEY);
@@ -284,10 +290,12 @@ test('does not echo', async () => {
     await send('echo', 1);
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('closed');
     expect(s.body.payload).toBeNull();
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.any(String));
 });
 
@@ -299,6 +307,7 @@ test('calls', async () => {
     await send('call', { name: 'name', args: [0, 1] });
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toStrictEqual([0, 1]);
     expect(s.body.channel).toBe(CHANNEL_KEY);
@@ -314,10 +323,12 @@ test('does not call', async () => {
     await send('call', { name: 'error', args: [0, 1] });
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith(expect.any(Error));
 });
 
@@ -329,6 +340,7 @@ test('receives unexpected body type', async () => {
     await send('type', null);
     await c.disconnection;
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
