@@ -1,11 +1,17 @@
 import { Channel } from '../channel';
 
-let c;
+const KEY = 0;
+
+let client, c;
 
 beforeEach(() => {
-    c = new Channel();
+    client = {
+        channels: [],
+    };
+
+    c = new Channel(client, KEY);
 });
 
 test('stub', () => {
-    expect(c).toBeInstanceOf(Channel);
+    expect(client.channels[KEY]).toBe(c);
 });

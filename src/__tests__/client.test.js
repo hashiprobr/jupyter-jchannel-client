@@ -11,7 +11,7 @@ jest.mock('../registry');
 
 jest.mock('../channel', () => {
     return {
-        Channel: jest.fn().mockImplementation((client) => {
+        Channel: jest.fn().mockImplementation((client, key) => {
             const channel = {
                 handleCall(name, args) {
                     if (name === 'error') {
@@ -24,7 +24,7 @@ jest.mock('../channel', () => {
                 },
             };
 
-            client.channels[CHANNEL_KEY] = channel;
+            client.channels[key] = channel;
 
             return channel;
         }),
