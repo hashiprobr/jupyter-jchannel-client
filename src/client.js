@@ -85,6 +85,15 @@ export class Client {
                                 }
                                 break;
                             case 'close':
+                                if (channelKey in this.channels) {
+                                    delete this.channels[channelKey];
+
+                                    payload = 'null';
+                                    bodyType = 'result';
+                                } else {
+                                    payload = `Channel key ${channelKey} does not exist`;
+                                    bodyType = 'exception';
+                                }
                                 break;
                             default: {
                                 channel = this.channels[channelKey];

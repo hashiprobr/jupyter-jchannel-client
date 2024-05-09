@@ -142,9 +142,6 @@ beforeEach(() => {
                                     case 'empty-body':
                                         socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
                                         break;
-                                    case 'mock-close':
-                                        write(encode('close', null));
-                                        break;
                                     case 'mock-exception':
                                         write(encode('exception', ''));
                                         break;
@@ -304,6 +301,35 @@ test('does not open with non-string code', async () => {
     c = start();
     await c.connection;
     await open(0);
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('closes', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open();
+    await send('close', null);
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does not close', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await send('close', null);
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
