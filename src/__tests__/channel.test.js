@@ -2,16 +2,16 @@ import { Channel } from '../channel';
 
 const KEY = 0;
 
-let client, c;
+let mockClient, c;
 
 beforeEach(() => {
-    client = {
+    mockClient = {
         channels: [],
     };
 
-    c = new Channel(client, KEY);
+    c = new Channel(mockClient, KEY);
 });
 
 test('stub', () => {
-    expect(client.channels[KEY]).toBe(c);
+    expect(mockClient.channels[KEY]).toBe(c);
 });
