@@ -74,9 +74,7 @@ export class Client {
                                         const method = window.eval(input);
 
                                         if (typeof method === 'function') {
-                                            channel = new Channel();
-
-                                            this.channels[channelKey] = channel;
+                                            channel = new Channel(this);
 
                                             output = method(channel);
                                             if (output instanceof Promise) {
