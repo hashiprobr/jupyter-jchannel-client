@@ -1,3 +1,6 @@
+import loop from './loop';
+import registry from './registry';
+
 import { Channel } from './channel';
 
 export class Client {
@@ -37,7 +40,7 @@ export class Client {
 
                 const body = JSON.parse(event.data);
 
-                this.#check(body, 'future');
+                const futureKey = this.#get(body, 'future');
                 const channelKey = this.#get(body, 'channel');
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
@@ -144,8 +147,18 @@ export class Client {
         this.channels = {};
     }
 
-    async _send(bodyType, body = {}) {
+    async _send(bodyType, input, channelKey) {
         const socket = await this.connection;
+
+        const payload = JSON.stringify(input);
+
+        const future = loop.createFuture();
+
+        const body = {
+            future: registry.store(future),
+            channel: channelKey,
+            payload,
+        };
 
         this.#accept(socket, bodyType, body);
     }
@@ -174,13 +187,9 @@ export class Client {
     }
 
     #get(body, name) {
-        this.#check(body, name);
-        return body[name];
-    }
-
-    #check(body, name) {
         if (!(name in body)) {
             throw new Error(`Body must have ${name}`);
         }
+        return body[name];
     }
 }

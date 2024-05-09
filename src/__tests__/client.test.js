@@ -1,7 +1,13 @@
 import crypto from 'crypto';
 import http from 'http';
+import loop from '../loop';
+import registry from '../registry';
 
 import { Client } from '../client';
+
+jest.mock('../loop');
+
+jest.mock('../registry');
 
 jest.mock('../channel', () => {
     return {
@@ -24,19 +30,14 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 0;
 const CHANNEL_KEY = 1;
 
-let c, s;
+let mockFuture, c, s;
 
 function start() {
     return new Client('ws://localhost:8889');
 }
 
-async function send(bodyType, input) {
-    const body = {
-        future: FUTURE_KEY,
-        channel: CHANNEL_KEY,
-        payload: JSON.stringify(input),
-    };
-    await c._send(bodyType, body);
+async function send(bodyType, input = null) {
+    await c._send(bodyType, input, CHANNEL_KEY);
 }
 
 async function open(payload = '() => { }') {
@@ -44,6 +45,13 @@ async function open(payload = '() => { }') {
 }
 
 beforeEach(() => {
+    mockFuture = jest.fn();
+
+    loop.createFuture.mockReturnValue(mockFuture);
+
+    registry.store.mockReturnValue(FUTURE_KEY);
+    registry.retrieve.mockReturnValue(mockFuture);
+
     const encoder = new TextEncoder();
 
     function encode(bodyType, payload) {
