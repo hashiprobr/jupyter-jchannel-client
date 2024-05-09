@@ -27,74 +27,103 @@ export class Client {
             });
         });
 
-        socket.addEventListener('message', (event) => {
+        socket.addEventListener('message', async (event) => {
             try {
                 const messageType = typeof event.data;
 
                 if (messageType !== 'string') {
-                    throw new Error(`Received unexpected message type ${messageType}`);
+                    throw new TypeError(`Received unexpected message type ${messageType}`);
                 }
 
                 const body = JSON.parse(event.data);
 
                 this.#check(body, 'future');
-                const key = this.#get(body, 'channel');
+                const channelKey = this.#get(body, 'channel');
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
 
-                if (bodyType === 'open') {
-                    if (typeof payload === 'string') {
-                        try {
-                            const method = window.eval(payload);
+                let input;
+                let output;
+                let channel;
 
-                            if (typeof method === 'function') {
-                                this.channels[key] = new Channel();
+                switch (bodyType) {
+                    case 'exception':
+                        break;
+                    case 'result':
+                        break;
+                    default:
+                        input = JSON.parse(payload);
 
-                                payload = method(this.channels[key]);
-                                bodyType = 'result';
-                            } else {
-                                payload = 'Code must represent a function';
-                                bodyType = 'exception';
-                            }
-                        } catch (error) {
-                            payload = this.#message(error);
-                            bodyType = 'exception';
-                        }
-                    } else {
-                        payload = 'Code must be a string';
-                        bodyType = 'exception';
-                    }
-                } else {
-                    const channel = this.channels[key];
+                        switch (bodyType) {
+                            case 'open':
+                                if (typeof input === 'string') {
+                                    try {
+                                        const method = window.eval(input);
 
-                    if (channel) {
-                        try {
-                            switch (bodyType) {
-                                case 'echo':
-                                    bodyType = 'result';
-                                    break;
-                                case 'call':
-                                    payload = channel.handleCall(payload.name, ...payload.args);
-                                    bodyType = 'result';
-                                    break;
-                                default:
-                                    payload = `Received unexpected body type ${bodyType}`;
+                                        if (typeof method === 'function') {
+                                            channel = new Channel();
+
+                                            this.channels[channelKey] = channel;
+
+                                            output = method(channel);
+                                            if (output instanceof Promise) {
+                                                output = await output;
+                                            }
+                                            payload = JSON.stringify(output);
+                                            bodyType = 'result';
+                                        } else {
+                                            payload = 'Code must represent a function';
+                                            bodyType = 'exception';
+                                        }
+                                    } catch (error) {
+                                        payload = this.#message(error);
+                                        bodyType = 'exception';
+                                    }
+                                } else {
+                                    payload = 'Code must be a string';
                                     bodyType = 'exception';
+                                }
+                                break;
+                            case 'close':
+                                break;
+                            default: {
+                                channel = this.channels[channelKey];
+
+                                if (channel) {
+                                    try {
+                                        switch (bodyType) {
+                                            case 'echo':
+                                                bodyType = 'result';
+                                                break;
+                                            case 'call':
+                                                output = channel.handleCall(input.name, input.args);
+                                                if (output instanceof Promise) {
+                                                    output = await output;
+                                                }
+                                                payload = JSON.stringify(output);
+                                                bodyType = 'result';
+                                                break;
+                                            default:
+                                                payload = `Received unexpected body type ${bodyType}`;
+                                                bodyType = 'exception';
+                                        }
+                                    } catch (error) {
+                                        payload = this.#message(error);
+                                        bodyType = 'exception';
+                                    }
+                                } else {
+                                    console.warn('Unexpected channel closure');
+
+                                    payload = null;
+                                    bodyType = 'closed';
+                                }
                             }
-                        } catch (error) {
-                            payload = this.#message(error);
-                            bodyType = 'exception';
                         }
-                    } else {
-                        console.warn('Unexpected channel closure');
 
-                        payload = null;
-                        bodyType = 'closed';
-                    }
+                        body.payload = payload;
+
+                        this.#accept(socket, bodyType, body);
                 }
-
-                body.payload = payload;
-                this._send(bodyType, body);
             } catch (error) {
                 console.error(error);
 
@@ -109,6 +138,10 @@ export class Client {
     async _send(bodyType, body = {}) {
         const socket = await this.connection;
 
+        this.#accept(socket, bodyType, body);
+    }
+
+    #accept(socket, bodyType, body) {
         body.type = bodyType;
 
         const data = JSON.stringify(body);

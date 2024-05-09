@@ -7,9 +7,12 @@ jest.mock('../channel', () => {
     return {
         Channel: jest.fn().mockImplementation(() => {
             return {
-                handleCall: (name, ...args) => {
+                handleCall(name, args) {
                     if (name === 'error') {
                         throw new Error();
+                    }
+                    if (name === 'async') {
+                        return Promise.resolve(args);
                     }
                     return args;
                 },
@@ -27,11 +30,11 @@ function start() {
     return new Client('ws://localhost:8889');
 }
 
-async function send(bodyType, payload) {
+async function send(bodyType, input) {
     const body = {
         future: FUTURE_KEY,
         channel: CHANNEL_KEY,
-        payload,
+        payload: JSON.stringify(input),
     };
     await c._send(bodyType, body);
 }
@@ -41,6 +44,19 @@ async function open(payload = '() => { }') {
 }
 
 beforeEach(() => {
+    const encoder = new TextEncoder();
+
+    function encode(bodyType, payload) {
+        const body = {
+            future: FUTURE_KEY,
+            channel: CHANNEL_KEY,
+            payload,
+        };
+        body.type = bodyType;
+        const data = JSON.stringify(body);
+        return encoder.encode(data);
+    }
+
     s = http.createServer();
 
     s.start = () => {
@@ -50,6 +66,10 @@ beforeEach(() => {
             });
 
             s.on('upgrade', (request, socket) => {
+                function write(bytes) {
+                    socket.write(new Uint8Array([0b10000001, bytes.length, ...bytes]));
+                }
+
                 const key = request.headers['sec-websocket-key'];
                 const magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
                 const accept = crypto.createHash('sha1')
@@ -76,15 +96,15 @@ beforeEach(() => {
                             const end = 6 + chunk[1] & 0b01111111;
 
                             const mask = chunk.subarray(2, 6);
-                            const payload = chunk.subarray(6, end);
+                            const bytes = chunk.subarray(6, end);
 
-                            for (let i = 0; i < payload.length; i++) {
-                                payload[i] ^= mask[i % 4];
+                            for (let i = 0; i < bytes.length; i++) {
+                                bytes[i] ^= mask[i % 4];
                             }
 
                             if (code === 0x8) {
                                 if (open) {
-                                    socket.write(new Uint8Array([0b10001000, payload.length, ...payload]));
+                                    write(bytes);
                                 }
                                 socket.destroy();
                                 resolve();
@@ -94,33 +114,45 @@ beforeEach(() => {
                             if (code === 0xA) {
                                 s.heartbeat = true;
                             } else {
-                                const data = payload.toString();
+                                const data = bytes.toString();
 
                                 const body = JSON.parse(data);
 
                                 switch (body.type) {
                                     case 'closed':
-                                    case 'result':
                                     case 'exception':
+                                    case 'result':
                                         s.body = body;
                                         if (typeof s.body.payload === 'undefined') {
                                             break;
                                         }
-                                    case 'close':
+                                    case 'socket-close':
                                         socket.write(new Uint8Array([0b10001000, 0]));
                                         open = false;
                                         break;
-                                    case 'heart':
+                                    case 'socket-heart':
                                         socket.write(new Uint8Array([0b10001001, 0]));
                                         break;
-                                    case 'bytes':
+                                    case 'socket-bytes':
                                         socket.write(new Uint8Array([0b10000010, 0]));
                                         break;
-                                    case 'empty':
+                                    case 'empty-message':
                                         socket.write(new Uint8Array([0b10000001, 0]));
                                         break;
+                                    case 'empty-body':
+                                        socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
+                                        break;
+                                    case 'mock-close':
+                                        write(encode('close', null));
+                                        break;
+                                    case 'mock-exception':
+                                        write(encode('exception', ''));
+                                        break;
+                                    case 'mock-result':
+                                        write(encode('result', '0'));
+                                        break;
                                     default:
-                                        socket.write(new Uint8Array([0b10000001, payload.length, ...payload]));
+                                        write(bytes);
                                 }
                             }
 
@@ -154,7 +186,7 @@ afterEach(() => {
 test('does not connect and does not send', async () => {
     c = start();
     await expect(c.connection).rejects.toThrow(Error);
-    await expect(c._send('heart')).rejects.toThrow(Error);
+    await expect(c._send('socket-heart')).rejects.toThrow(Error);
     await c.disconnection;
 });
 
@@ -162,8 +194,8 @@ test('connects, pongs, and disconnects', async () => {
     await s.start();
     c = start();
     await expect(c.connection).resolves.toBeInstanceOf(WebSocket);
-    await c._send('heart');
-    await c._send('close');
+    await c._send('socket-heart');
+    await c._send('socket-close');
     await c.disconnection;
     await s.stop();
     expect(s.heartbeat).toBe(true);
@@ -174,7 +206,7 @@ test('receives unexpected message type', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('bytes');
+    await c._send('socket-bytes');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
@@ -187,7 +219,7 @@ test('receives empty message', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('empty');
+    await c._send('empty-message');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
@@ -200,7 +232,7 @@ test('receives empty body', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('open');
+    await c._send('empty-body');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
@@ -217,7 +249,21 @@ test('opens', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe(0);
+    expect(s.body.payload).toBe('0');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('opens async', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open('async () => 0');
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('0');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -277,7 +323,7 @@ test('echoes', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe(1);
+    expect(s.body.payload).toBe('1');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -309,12 +355,27 @@ test('calls', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toStrictEqual([0, 1]);
+    expect(s.body.payload).toBe('[0,1]');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
 
-test('does not call', async () => {
+test('calls async', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open();
+    await send('call', { name: 'async', args: [0, 1] });
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('[0,1]');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('calls error', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
     c = start();
