@@ -26,11 +26,11 @@ test('stores and retrieves twice', () => {
     const future0 = loop.createFuture();
     const key0 = r.store(future0);
     expect(r.retrieve(key0)).toBe(future0);
-    expect(r.retrieve(key0)).toBeUndefined();
+    expect(() => r.retrieve(key0)).toThrow(Error);
     const future1 = loop.createFuture();
     const key1 = r.store(future1);
     expect(r.retrieve(key1)).toBe(future1);
-    expect(r.retrieve(key1)).toBeUndefined();
+    expect(() => r.retrieve(key1)).toThrow(Error);
 });
 
 test('stores and retrieves queue', () => {
@@ -39,9 +39,9 @@ test('stores and retrieves queue', () => {
     const future1 = loop.createFuture();
     const key1 = r.store(future1);
     expect(r.retrieve(key0)).toBe(future0);
-    expect(r.retrieve(key0)).toBeUndefined();
+    expect(() => r.retrieve(key0)).toThrow(Error);
     expect(r.retrieve(key1)).toBe(future1);
-    expect(r.retrieve(key1)).toBeUndefined();
+    expect(() => r.retrieve(key1)).toThrow(Error);
 });
 
 test('stores and retrieves stack', () => {
@@ -50,7 +50,7 @@ test('stores and retrieves stack', () => {
     const future1 = loop.createFuture();
     const key1 = r.store(future1);
     expect(r.retrieve(key1)).toBe(future1);
-    expect(r.retrieve(key1)).toBeUndefined();
+    expect(() => r.retrieve(key1)).toThrow(Error);
     expect(r.retrieve(key0)).toBe(future0);
-    expect(r.retrieve(key0)).toBeUndefined();
+    expect(() => r.retrieve(key0)).toThrow(Error);
 });

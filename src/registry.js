@@ -17,6 +17,9 @@ export class Registry {
     }
 
     retrieve(key) {
+        if (!(key in this.futures)) {
+            throw new Error(`Future key ${key} does not exist`);
+        }
         const future = this.futures[key];
         delete this.futures[key];
         this.keys.push(key);
