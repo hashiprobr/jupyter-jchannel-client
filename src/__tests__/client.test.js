@@ -3,7 +3,7 @@ import http from 'http';
 import loop from '../loop';
 import registry from '../registry';
 
-import { Client } from '../client';
+import { PythonError, Client } from '../client';
 
 jest.mock('../loop');
 
@@ -45,7 +45,10 @@ async function open(payload = '() => { }') {
 }
 
 beforeEach(() => {
-    mockFuture = jest.fn();
+    mockFuture = {
+        setResult: jest.fn(),
+        setException: jest.fn(),
+    };
 
     loop.createFuture.mockReturnValue(mockFuture);
 
@@ -191,7 +194,7 @@ afterEach(() => {
 test('does not connect and does not send', async () => {
     c = start();
     await expect(c.connection).rejects.toThrow(Error);
-    await expect(c._send('socket-heart')).rejects.toThrow(Error);
+    await expect(send('socket-heart')).rejects.toThrow(Error);
     await c.disconnection;
 });
 
@@ -199,8 +202,8 @@ test('connects, pongs, and disconnects', async () => {
     await s.start();
     c = start();
     await expect(c.connection).resolves.toBeInstanceOf(WebSocket);
-    await c._send('socket-heart');
-    await c._send('socket-close');
+    await send('socket-heart');
+    await send('socket-close');
     await c.disconnection;
     await s.stop();
     expect(s.heartbeat).toBe(true);
@@ -211,7 +214,7 @@ test('receives unexpected message type', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('socket-bytes');
+    await send('socket-bytes');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
@@ -224,7 +227,7 @@ test('receives empty message', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('empty-message');
+    await send('empty-message');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
@@ -237,12 +240,39 @@ test('receives empty body', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await c._send('empty-body');
+    await send('empty-body');
     await c.disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(2);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
     expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
+});
+
+test('receives exception', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await send('mock-exception');
+    await send('close');
+    await c.disconnection;
+    await s.stop();
+    const [args] = mockFuture.setException.mock.calls;
+    const [error] = args;
+    expect(error).toBeInstanceOf(PythonError);
+    expect(typeof error.message).toBe('string');
+});
+
+test('receives result', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await send('mock-result');
+    await send('close');
+    await c.disconnection;
+    await s.stop();
+    const [args] = mockFuture.setResult.mock.calls;
+    const [output] = args;
+    expect(output).toBe(0);
 });
 
 test('opens', async () => {
@@ -323,7 +353,7 @@ test('closes', async () => {
     c = start();
     await c.connection;
     await open();
-    await send('close', null);
+    await send('close');
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -337,7 +367,7 @@ test('does not close', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await send('close', null);
+    await send('close');
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -432,7 +462,7 @@ test('receives unexpected body type', async () => {
     c = start();
     await c.connection;
     await open();
-    await send('type', null);
+    await send('type');
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);

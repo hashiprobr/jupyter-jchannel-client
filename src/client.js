@@ -3,6 +3,9 @@ import registry from './registry';
 
 import { Channel } from './channel';
 
+export class PythonError extends Error {
+}
+
 export class Client {
     constructor(url) {
         const socket = new WebSocket(`${url}/socket`);
@@ -45,14 +48,21 @@ export class Client {
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
 
+                let future;
                 let input;
                 let output;
                 let channel;
 
                 switch (bodyType) {
                     case 'exception':
+                        future = registry.retrieve(futureKey);
+                        future.setException(new PythonError(payload));
                         break;
                     case 'result':
+                        output = JSON.parse(payload);
+
+                        future = registry.retrieve(futureKey);
+                        future.setResult(output);
                         break;
                     default:
                         input = JSON.parse(payload);
