@@ -17,7 +17,13 @@ export class Channel {
         this.handler = handler;
     }
 
-    handleCall(name, args) {
+    _handleCall(name, args) {
+        const method = this.#method(name);
+
+        return method(...args);
+    }
+
+    #method(name) {
         if (this.handler === null) {
             throw new Error('Channel does not have handler');
         }
@@ -28,7 +34,7 @@ export class Channel {
             throw new Error(`Handler does not have method ${name}`);
         }
 
-        return method(...args);
+        return method;
     }
 
     async echo(...args) {

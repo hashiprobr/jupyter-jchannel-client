@@ -8,7 +8,7 @@ beforeEach(() => {
     client = {
         channels: [],
 
-        async _send(bodyType, input, key) {
+        async _send(bodyType, input, key) {  // eslint-disable-line require-await
             return Promise.resolve([bodyType, input, key]);
         },
     };
@@ -47,33 +47,33 @@ test('handles call with result', () => {
             return a + b;
         },
     });
-    expect(c.handleCall('name', [2, 3])).toBe(5);
+    expect(c._handleCall('name', [2, 3])).toBe(5);
 });
 
 test('handles call with exception', () => {
     c.setHandler({
-        name(a, b) {
+        name() {
             throw Error();
         },
     });
-    expect(() => c.handleCall('name', [2, 3])).toThrow(Error);
+    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
 });
 
 test('does not handle call without handler', () => {
-    expect(() => c.handleCall('name', [2, 3])).toThrow(Error);
+    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
 });
 
 test('does not handle call without handler method', () => {
     c.setHandler({});
-    expect(() => c.handleCall('name', [2, 3])).toThrow(Error);
+    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
 });
 
 test('echoes', async () => {
-    const output = ['echo', [2, 3], KEY]
+    const output = ['echo', [2, 3], KEY];
     await expect(c.echo(2, 3)).resolves.toStrictEqual(output);
 });
 
 test('calls', async () => {
-    const output = ['call', { name: 'name', args: [2, 3] }, KEY]
+    const output = ['call', { name: 'name', args: [2, 3] }, KEY];
     await expect(c.call('name', 2, 3)).resolves.toStrictEqual(output);
 });

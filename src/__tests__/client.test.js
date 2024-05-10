@@ -13,13 +13,17 @@ jest.mock('../channel', () => {
     return {
         Channel: jest.fn().mockImplementation((client, key) => {
             const channel = {
-                handleCall(name, args) {
+                _handleCall(name, args) {
                     if (name === 'error') {
                         throw new Error();
                     }
                     if (name === 'async') {
-                        return Promise.resolve(args);
+                        return this._resolve(args);
                     }
+                    return args;
+                },
+
+                async _resolve(args) {  // eslint-disable-line require-await
                     return args;
                 },
             };

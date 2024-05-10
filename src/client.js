@@ -116,7 +116,7 @@ export class Client {
                                                 bodyType = 'result';
                                                 break;
                                             case 'call':
-                                                output = channel.handleCall(input.name, input.args);
+                                                output = channel._handleCall(input.name, input.args);
                                                 if (output instanceof Promise) {
                                                     output = await output;
                                                 }
