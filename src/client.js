@@ -169,6 +169,8 @@ export class Client {
         };
 
         this.#accept(socket, bodyType, body);
+
+        return future;
     }
 
     #accept(socket, bodyType, body) {

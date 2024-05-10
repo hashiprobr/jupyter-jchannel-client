@@ -34,14 +34,14 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 0;
 const CHANNEL_KEY = 1;
 
-let mockFuture, c, s;
+let c, s;
 
 function start() {
     return new Client('ws://localhost:8889');
 }
 
 async function send(bodyType, input = null) {
-    await c._send(bodyType, input, CHANNEL_KEY);
+    return await c._send(bodyType, input, CHANNEL_KEY);
 }
 
 async function open(payload = '() => { }') {
@@ -62,15 +62,15 @@ beforeEach(() => {
         return encoder.encode(data);
     }
 
-    mockFuture = {
+    const future = {
         setResult: jest.fn(),
         setException: jest.fn(),
     };
 
-    loop.createFuture.mockReturnValue(mockFuture);
+    loop.createFuture.mockReturnValue(future);
 
     registry.store.mockReturnValue(FUTURE_KEY);
-    registry.retrieve.mockReturnValue(mockFuture);
+    registry.retrieve.mockReturnValue(future);
 
     s = http.createServer();
 
@@ -256,11 +256,11 @@ test('receives exception', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await send('mock-exception');
+    const future = await send('mock-exception');
     await send('close');
     await c.disconnection;
     await s.stop();
-    const [args] = mockFuture.setException.mock.calls;
+    const [args] = future.setException.mock.calls;
     const [error] = args;
     expect(error).toBeInstanceOf(PythonError);
     expect(typeof error.message).toBe('string');
@@ -270,11 +270,11 @@ test('receives result', async () => {
     await s.start();
     c = start();
     await c.connection;
-    await send('mock-result');
+    const future = await send('mock-result');
     await send('close');
     await c.disconnection;
     await s.stop();
-    const [args] = mockFuture.setResult.mock.calls;
+    const [args] = future.setResult.mock.calls;
     const [output] = args;
     expect(output).toBe(0);
 });
@@ -418,12 +418,12 @@ test('calls', async () => {
     c = start();
     await c.connection;
     await open();
-    await send('call', { name: 'name', args: [0, 1] });
+    await send('call', { name: 'name', args: [2, 3] });
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('[0,1]');
+    expect(s.body.payload).toBe('[2,3]');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -433,12 +433,12 @@ test('calls async', async () => {
     c = start();
     await c.connection;
     await open();
-    await send('call', { name: 'async', args: [0, 1] });
+    await send('call', { name: 'async', args: [2, 3] });
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('[0,1]');
+    expect(s.body.payload).toBe('[2,3]');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -449,7 +449,7 @@ test('calls error', async () => {
     c = start();
     await c.connection;
     await open();
-    await send('call', { name: 'error', args: [0, 1] });
+    await send('call', { name: 'error', args: [2, 3] });
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
