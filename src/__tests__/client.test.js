@@ -17,6 +17,9 @@ jest.mock('../channel', () => {
                     if (name === 'error') {
                         throw new Error();
                     }
+                    if (name === 'undef') {
+                        return;
+                    }
                     if (name === 'async') {
                         return this._resolve(args);
                     }
@@ -142,9 +145,6 @@ beforeEach(() => {
                                     case 'exception':
                                     case 'result':
                                         s.body = body;
-                                        if (typeof s.body.payload === 'undefined') {
-                                            break;
-                                        }
                                     case 'socket-close':
                                         socket.write(new Uint8Array([0b10001000, 0]));
                                         open = false;
@@ -202,7 +202,7 @@ afterEach(() => {
 test('does not connect and does not send', async () => {
     c = start();
     await expect(c.connection).rejects.toThrow(Error);
-    await expect(send('socket-heart')).rejects.toThrow(Error);
+    await expect(send('')).rejects.toThrow(Error);
     await c.disconnection;
 });
 
@@ -261,7 +261,7 @@ test('receives exception', async () => {
     c = start();
     await c.connection;
     const future = await send('mock-exception');
-    await send('close');
+    await send('socket-close');
     await c.disconnection;
     await s.stop();
     const [args] = future.setException.mock.calls;
@@ -275,7 +275,7 @@ test('receives result', async () => {
     c = start();
     await c.connection;
     const future = await send('mock-result');
-    await send('close');
+    await send('socket-close');
     await c.disconnection;
     await s.stop();
     const [args] = future.setResult.mock.calls;
@@ -307,6 +307,49 @@ test('opens async', async () => {
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe('0');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('opens undef', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open();
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does not open twice', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open();
+    await open();
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does not open error', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open('() => { throw new Error(); }');
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -443,6 +486,21 @@ test('calls async', async () => {
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe('[2,3]');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('calls undef', async () => {
+    await s.start();
+    c = start();
+    await c.connection;
+    await open();
+    await send('call', { name: 'undef', args: [2, 3] });
+    await c.disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });

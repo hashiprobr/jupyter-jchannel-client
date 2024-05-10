@@ -74,14 +74,24 @@ export class Client {
                                         const method = window.eval(input);
 
                                         if (typeof method === 'function') {
-                                            channel = new Channel(this, channelKey);
+                                            if (channelKey in this.channels) {
+                                                payload = 'Channel has already been opened';
+                                                bodyType = 'exception';
+                                            } else {
+                                                channel = new Channel(this, channelKey);
 
-                                            output = method(channel);
-                                            if (output instanceof Promise) {
-                                                output = await output;
+                                                output = method(channel);
+                                                if (output instanceof Promise) {
+                                                    output = await output;
+                                                }
+
+                                                payload = JSON.stringify(output);
+                                                if (typeof payload === 'undefined') {
+                                                    payload = 'null';
+                                                }
+
+                                                bodyType = 'result';
                                             }
-                                            payload = JSON.stringify(output);
-                                            bodyType = 'result';
                                         } else {
                                             payload = 'Code must represent a function';
                                             bodyType = 'exception';
@@ -120,7 +130,12 @@ export class Client {
                                                 if (output instanceof Promise) {
                                                     output = await output;
                                                 }
+
                                                 payload = JSON.stringify(output);
+                                                if (typeof payload === 'undefined') {
+                                                    payload = 'null';
+                                                }
+
                                                 bodyType = 'result';
                                                 break;
                                             default:
