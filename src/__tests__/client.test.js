@@ -49,16 +49,6 @@ async function open(payload = '() => { }') {
 }
 
 beforeEach(() => {
-    mockFuture = {
-        setResult: jest.fn(),
-        setException: jest.fn(),
-    };
-
-    loop.createFuture.mockReturnValue(mockFuture);
-
-    registry.store.mockReturnValue(FUTURE_KEY);
-    registry.retrieve.mockReturnValue(mockFuture);
-
     const encoder = new TextEncoder();
 
     function encode(bodyType, payload) {
@@ -71,6 +61,16 @@ beforeEach(() => {
         const data = JSON.stringify(body);
         return encoder.encode(data);
     }
+
+    mockFuture = {
+        setResult: jest.fn(),
+        setException: jest.fn(),
+    };
+
+    loop.createFuture.mockReturnValue(mockFuture);
+
+    registry.store.mockReturnValue(FUTURE_KEY);
+    registry.retrieve.mockReturnValue(mockFuture);
 
     s = http.createServer();
 
