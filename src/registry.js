@@ -25,6 +25,13 @@ export class Registry {
         this.keys.push(key);
         return future;
     }
+
+    clear() {
+        const keys = Object.keys(this.futures);
+        for (const key of keys) {
+            delete this.futures[key];
+        }
+    }
 }
 
 export default new Registry();

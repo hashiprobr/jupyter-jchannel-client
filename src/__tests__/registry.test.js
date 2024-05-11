@@ -54,3 +54,13 @@ test('stores and retrieves stack', () => {
     expect(r.retrieve(key0)).toBe(future0);
     expect(() => r.retrieve(key0)).toThrow(Error);
 });
+
+test('stores and clears', () => {
+    const future0 = loop.createFuture();
+    const key0 = r.store(future0);
+    const future1 = loop.createFuture();
+    const key1 = r.store(future1);
+    r.clear();
+    expect(() => r.retrieve(key1)).toThrow(Error);
+    expect(() => r.retrieve(key0)).toThrow(Error);
+});
