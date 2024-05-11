@@ -51,8 +51,8 @@ async function send(bodyType, input = null) {
     return await c._send(bodyType, input, CHANNEL_KEY);
 }
 
-async function open(payload = '() => { }') {
-    await send('open', payload);
+async function open(code = '() => { }') {
+    await send('open', code);
 }
 
 beforeEach(() => {
