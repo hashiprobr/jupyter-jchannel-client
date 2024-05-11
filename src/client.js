@@ -1,10 +1,8 @@
 import loop from './loop';
 import registry from './registry';
 
+import { PythonError } from './error';
 import { Channel } from './channel';
-
-export class PythonError extends Error {
-}
 
 export class Client {
     constructor(url) {

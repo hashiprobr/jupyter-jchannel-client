@@ -3,7 +3,8 @@ import http from 'http';
 import loop from '../loop';
 import registry from '../registry';
 
-import { PythonError, Client } from '../client';
+import { PythonError } from '../error';
+import { Client } from '../client';
 
 jest.mock('../loop');
 
