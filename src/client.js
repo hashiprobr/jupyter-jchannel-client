@@ -69,15 +69,15 @@ export class Client {
 
                         switch (bodyType) {
                             case 'open':
-                                if (typeof input === 'string') {
-                                    try {
-                                        const method = window.eval(input);
+                                if (channelKey in this.channels) {
+                                    payload = 'Channel has already been opened';
+                                    bodyType = 'exception';
+                                } else {
+                                    if (typeof input === 'string') {
+                                        try {
+                                            const method = window.eval(input);
 
-                                        if (typeof method === 'function') {
-                                            if (channelKey in this.channels) {
-                                                payload = 'Channel has already been opened';
-                                                bodyType = 'exception';
-                                            } else {
+                                            if (typeof method === 'function') {
                                                 channel = new Channel(this, channelKey);
 
                                                 output = method(channel);
@@ -91,18 +91,18 @@ export class Client {
                                                 }
 
                                                 bodyType = 'result';
+                                            } else {
+                                                payload = 'Code must represent a function';
+                                                bodyType = 'exception';
                                             }
-                                        } else {
-                                            payload = 'Code must represent a function';
+                                        } catch (error) {
+                                            payload = this.#message(error);
                                             bodyType = 'exception';
                                         }
-                                    } catch (error) {
-                                        payload = this.#message(error);
+                                    } else {
+                                        payload = 'Code must be a string';
                                         bodyType = 'exception';
                                     }
-                                } else {
-                                    payload = 'Code must be a string';
-                                    bodyType = 'exception';
                                 }
                                 break;
                             case 'close':
