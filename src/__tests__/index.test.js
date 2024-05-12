@@ -7,7 +7,7 @@ jest.mock('../client', () => {
     };
 });
 
-const URL = 'ws://s';
+const URL = 's';
 
 let i;
 
