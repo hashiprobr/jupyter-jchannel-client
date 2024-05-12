@@ -173,6 +173,10 @@ export class Client {
     async _send(bodyType, input, channelKey) {
         const socket = await this.connection;
 
+        if (socket.readyState !== WebSocket.OPEN) {
+            throw new Error();
+        }
+
         const payload = JSON.stringify(input);
 
         const future = loop.createFuture();
