@@ -1,6 +1,6 @@
 import loop from './loop';
 
-import { PythonError } from './error';
+import { StateError, PythonError } from './error';
 import { Registry } from './registry';
 import { Channel } from './channel';
 
@@ -174,7 +174,7 @@ export class Client {
         const socket = await this.connection;
 
         if (socket.readyState !== WebSocket.OPEN) {
-            throw new Error();
+            throw new StateError('Client not connected');
         }
 
         const payload = JSON.stringify(input);

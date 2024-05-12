@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import http from 'http';
 import loop from '../loop';
 
-import { PythonError } from '../error';
+import { StateError, PythonError } from '../error';
 import { Registry } from '../registry';
 import { Client } from '../client';
 
@@ -215,15 +215,26 @@ afterEach(() => {
 test('does not connect and does not send', async () => {
     c = start();
     await expect(c.connection).rejects.toThrow(Error);
-    await expect(send('')).rejects.toThrow(Error);
     await c.disconnection;
+    await expect(send('')).rejects.toThrow(Error);
+    expect(c.registry.clear).toHaveBeenCalledTimes(1);
+});
+
+test('connects, disconnects, and sends', async () => {
+    await s.start();
+    c = start();
+    await expect(c.connection).resolves.toBeInstanceOf(WebSocket);
+    await send('socket-close');
+    await c.disconnection;
+    await expect(send('')).rejects.toThrow(StateError);
+    await s.stop();
     expect(c.registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('connects, pongs, and disconnects', async () => {
     await s.start();
     c = start();
-    await expect(c.connection).resolves.toBeInstanceOf(WebSocket);
+    await c.connection;
     await send('socket-heart');
     await send('socket-close');
     await c.disconnection;
@@ -240,7 +251,6 @@ test('receives unexpected message type', async () => {
     await send('socket-bytes');
     await c.disconnection;
     await s.stop();
-    expect(c.registry.clear).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledTimes(2);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
     expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
