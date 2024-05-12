@@ -29,7 +29,9 @@ export class Registry {
     clear() {
         const keys = Object.keys(this.futures);
         for (const key of keys) {
+            const future = this.futures[key];
             delete this.futures[key];
+            future.cancel('Client disconnected');
         }
     }
 }

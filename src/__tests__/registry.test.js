@@ -6,19 +6,17 @@ jest.mock('../loop');
 
 let r;
 
-function createFuture() {
-    return new Promise(() => { });
-}
-
-beforeAll(() => {
-    loop.createFuture.mockImplementation(createFuture);
-});
-
 beforeEach(() => {
+    loop.createFuture.mockImplementation(() => {
+        return {
+            cancel: jest.fn(),
+        };
+    });
+
     r = new Registry();
 });
 
-afterAll(() => {
+afterEach(() => {
     jest.resetAllMocks();
 });
 
@@ -62,5 +60,9 @@ test('stores and clears', () => {
     const key1 = r.store(future1);
     r.clear();
     expect(() => r.retrieve(key1)).toThrow(Error);
+    expect(future1.cancel).toHaveBeenCalledTimes(1);
+    expect(future1.cancel).toHaveBeenCalledWith(expect.any(String));
     expect(() => r.retrieve(key0)).toThrow(Error);
+    expect(future0.cancel).toHaveBeenCalledTimes(1);
+    expect(future1.cancel).toHaveBeenCalledWith(expect.any(String));
 });
