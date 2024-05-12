@@ -7,17 +7,17 @@ jest.mock('../client', () => {
     };
 });
 
-const URL = 'ws://a';
+const URL = 'ws://s';
 
 let i;
 
 function createClient(readyState) {
     return {
         connection: new Promise((resolve, reject) => {
-            if (readyState) {
-                resolve({ readyState });
-            } else {
+            if (readyState === null) {
                 reject(new Error());
+            } else {
+                resolve({ readyState });
             }
         }),
     };
@@ -38,14 +38,14 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
-test('starts once and does not restart', async () => {
+test('starts and does not restart', async () => {
     const client = createClient(WebSocket.OPEN);
     Client.mockImplementation(createConstructor(client));
     await expect(i.start(URL)).resolves.toBe(client);
     await expect(i.start(URL)).resolves.toBe(client);
 });
 
-test('starts twice', async () => {
+test('starts and restarts', async () => {
     const client0 = createClient(WebSocket.CLOSED);
     Client.mockImplementation(createConstructor(client0));
     await expect(i.start(URL)).resolves.toBe(client0);
@@ -54,9 +54,9 @@ test('starts twice', async () => {
     await expect(i.start(URL)).resolves.toBe(client1);
 });
 
-test('starts and restarts', async () => {
+test('does not start and starts', async () => {
     const warn = jest.spyOn(console, 'warn');
-    const client0 = createClient();
+    const client0 = createClient(null);
     Client.mockImplementation(createConstructor(client0));
     await expect(i.start(URL)).resolves.toBe(client0);
     const client1 = createClient(WebSocket.OPEN);
