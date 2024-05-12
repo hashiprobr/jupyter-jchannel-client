@@ -48,14 +48,6 @@ const CHANNEL_KEY = 1;
 
 let c, s;
 
-async function send(bodyType, input = null) {
-    return await c._send(bodyType, input, CHANNEL_KEY);
-}
-
-async function open(code = '() => { }') {
-    await send('open', code);
-}
-
 function start() {
     const future = {
         setResult: jest.fn(),
@@ -76,6 +68,14 @@ function start() {
     registry.retrieve.mockReturnValue(future);
 
     return new Client('ws://localhost:8889');
+}
+
+async function send(bodyType, input = null) {
+    return await c._send(bodyType, input, CHANNEL_KEY);
+}
+
+async function open(code = '() => { }') {
+    await send('open', code);
 }
 
 beforeEach(() => {
