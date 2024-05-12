@@ -17,6 +17,18 @@ export class Registry {
     }
 
     retrieve(key) {
+        return this.#pop(key);
+    }
+
+    clear() {
+        const keys = Object.keys(this.futures);
+        for (const key of keys) {
+            const future = this.#pop(key);
+            future.cancel('Client disconnected');
+        }
+    }
+
+    #pop(key) {
         if (!(key in this.futures)) {
             throw new Error(`Future key ${key} does not exist`);
         }
@@ -24,14 +36,5 @@ export class Registry {
         delete this.futures[key];
         this.keys.push(key);
         return future;
-    }
-
-    clear() {
-        const keys = Object.keys(this.futures);
-        for (const key of keys) {
-            const future = this.futures[key];
-            delete this.futures[key];
-            future.cancel('Client disconnected');
-        }
     }
 }
