@@ -217,6 +217,7 @@ test('does not connect and does not send', async () => {
     await expect(c.connection).rejects.toThrow(Error);
     await expect(send('')).rejects.toThrow(Error);
     await c.disconnection;
+    expect(c.registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('connects, pongs, and disconnects', async () => {
