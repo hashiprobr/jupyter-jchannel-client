@@ -1,3 +1,6 @@
+export class CancelledError extends Error {
+}
+
 export class Loop {
     createFuture() {
         let setResult;
@@ -8,8 +11,28 @@ export class Loop {
             setException = reject;
         });
 
-        future.setResult = setResult;
-        future.setException = setException;
+        future.pending = true;
+
+        future.setResult = (result) => {
+            if (future.pending) {
+                future.pending = false;
+                setResult(result);
+            }
+        };
+
+        future.setException = (exception) => {
+            if (future.pending) {
+                future.pending = false;
+                setException(exception);
+            }
+        };
+
+        future.cancel = (message) => {
+            if (future.pending) {
+                future.pending = false;
+                setException(new CancelledError(message));
+            }
+        };
 
         return future;
     }
