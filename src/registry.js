@@ -33,5 +33,3 @@ export class Registry {
         }
     }
 }
-
-export default new Registry();

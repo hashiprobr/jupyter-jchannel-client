@@ -1,7 +1,7 @@
 import loop from './loop';
-import registry from './registry';
 
 import { PythonError } from './error';
+import { Registry } from './registry';
 import { Channel } from './channel';
 
 export class Client {
@@ -27,6 +27,7 @@ export class Client {
 
         this.disconnection = new Promise((resolve) => {
             socket.addEventListener('close', () => {
+                this.registry.clear();
                 resolve();
             });
         });
@@ -53,13 +54,13 @@ export class Client {
 
                 switch (bodyType) {
                     case 'exception':
-                        future = registry.retrieve(futureKey);
+                        future = this.registry.retrieve(futureKey);
                         future.setException(new PythonError(payload));
                         break;
                     case 'result':
                         output = JSON.parse(payload);
 
-                        future = registry.retrieve(futureKey);
+                        future = this.registry.retrieve(futureKey);
                         future.setResult(output);
                         break;
                     default:
@@ -165,6 +166,7 @@ export class Client {
             }
         });
 
+        this.registry = new Registry();
         this.channels = {};
     }
 
@@ -176,7 +178,7 @@ export class Client {
         const future = loop.createFuture();
 
         const body = {
-            future: registry.store(future),
+            future: this.registry.store(future),
             channel: channelKey,
             payload,
         };

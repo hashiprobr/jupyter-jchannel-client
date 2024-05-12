@@ -1,14 +1,18 @@
 import crypto from 'crypto';
 import http from 'http';
 import loop from '../loop';
-import registry from '../registry';
 
 import { PythonError } from '../error';
+import { Registry } from '../registry';
 import { Client } from '../client';
 
 jest.mock('../loop');
 
-jest.mock('../registry');
+jest.mock('../registry', () => {
+    return {
+        Registry: jest.fn(),
+    };
+});
 
 jest.mock('../channel', () => {
     return {
@@ -45,6 +49,24 @@ const CHANNEL_KEY = 1;
 let c, s;
 
 function start() {
+    const future = {
+        setResult: jest.fn(),
+        setException: jest.fn(),
+    };
+
+    loop.createFuture.mockReturnValue(future);
+
+    const registry = {
+        store: jest.fn(),
+        retrieve: jest.fn(),
+        clear: jest.fn(),
+    };
+
+    Registry.mockReturnValue(registry);
+
+    registry.store.mockReturnValue(FUTURE_KEY);
+    registry.retrieve.mockReturnValue(future);
+
     return new Client('ws://localhost:8889');
 }
 
@@ -69,16 +91,6 @@ beforeEach(() => {
         const data = JSON.stringify(body);
         return encoder.encode(data);
     }
-
-    const future = {
-        setResult: jest.fn(),
-        setException: jest.fn(),
-    };
-
-    loop.createFuture.mockReturnValue(future);
-
-    registry.store.mockReturnValue(FUTURE_KEY);
-    registry.retrieve.mockReturnValue(future);
 
     s = http.createServer();
 
@@ -216,6 +228,7 @@ test('connects, pongs, and disconnects', async () => {
     await c.disconnection;
     await s.stop();
     expect(s.heartbeat).toBe(true);
+    expect(c.registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('receives unexpected message type', async () => {
