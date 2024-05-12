@@ -240,6 +240,7 @@ test('receives unexpected message type', async () => {
     await send('socket-bytes');
     await c.disconnection;
     await s.stop();
+    expect(c.registry.clear).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledTimes(2);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
     expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
