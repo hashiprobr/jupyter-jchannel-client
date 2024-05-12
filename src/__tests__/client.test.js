@@ -220,7 +220,7 @@ test('does not connect and does not send', async () => {
     expect(c.registry.clear).toHaveBeenCalledTimes(1);
 });
 
-test('connects, disconnects, and sends', async () => {
+test('connects, disconnects, and does not send', async () => {
     await s.start();
     c = start();
     await expect(c.connection).resolves.toBeInstanceOf(WebSocket);
