@@ -3,33 +3,33 @@ export class CancelledError extends Error {
 
 export class Loop {
     createFuture() {
+        let pending;
         let setResult;
         let setException;
 
         const future = new Promise((resolve, reject) => {
+            pending = true;
             setResult = resolve;
             setException = reject;
         });
 
-        future.pending = true;
-
         future.setResult = (result) => {
-            if (future.pending) {
-                future.pending = false;
+            if (pending) {
+                pending = false;
                 setResult(result);
             }
         };
 
         future.setException = (exception) => {
-            if (future.pending) {
-                future.pending = false;
+            if (pending) {
+                pending = false;
                 setException(exception);
             }
         };
 
         future.cancel = (message) => {
-            if (future.pending) {
-                future.pending = false;
+            if (pending) {
+                pending = false;
                 setException(new CancelledError(message));
             }
         };
