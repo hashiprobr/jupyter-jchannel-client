@@ -29,12 +29,13 @@ test('sets exception, does not set result, and does not cancel', async () => {
 });
 
 test('cancels, does not set result, and does not set exception', async () => {
-    f.cancel('message');
+    const message = 'message';
+    f.cancel(message);
     try {
         await f;
     } catch (error) {
         expect(error).toBeInstanceOf(CancelledError);
-        expect(error.message).toBe('message');
+        expect(error.message).toBe(message);
         f.setResult({});
         await expect(f).rejects.toThrow(error);
         f.setException(new Error());
