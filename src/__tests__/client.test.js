@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import http from 'http';
 import loop from '../loop';
 
-import { StateError, PythonError } from '../error';
+import { StateError, KernelError } from '../error';
 import { Registry } from '../registry';
 import { Client } from '../client';
 
@@ -292,7 +292,7 @@ test('receives exception', async () => {
     await s.stop();
     const [args] = future.setException.mock.calls;
     const [error] = args;
-    expect(error).toBeInstanceOf(PythonError);
+    expect(error).toBeInstanceOf(KernelError);
     expect(typeof error.message).toBe('string');
 });
 

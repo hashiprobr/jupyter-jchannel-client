@@ -1,6 +1,6 @@
 import loop from './loop';
 
-import { StateError, PythonError } from './error';
+import { StateError, KernelError } from './error';
 import { Registry } from './registry';
 import { Channel } from './channel';
 
@@ -55,7 +55,7 @@ export class Client {
                 switch (bodyType) {
                     case 'exception':
                         future = this.registry.retrieve(futureKey);
-                        future.setException(new PythonError(payload));
+                        future.setException(new KernelError(payload));
                         break;
                     case 'result':
                         output = JSON.parse(payload);
