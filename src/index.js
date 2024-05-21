@@ -12,9 +12,9 @@ export class Index {
     }
 
     stop(url) {
-        const prev = this.clients[url];
+        const none = this.#stop(this.clients[url]);
         delete this.clients[url];
-        return this.#stop(prev);
+        return none;
     }
 
     async #start(url, prev) {
