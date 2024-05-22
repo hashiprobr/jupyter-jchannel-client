@@ -7,10 +7,10 @@ export class Registry {
 
     store(future) {
         let key;
-        if (this.keys.length === 0) {
-            key = this.counter++;
-        } else {
+        if (this.keys.length) {
             key = this.keys.pop();
+        } else {
+            key = this.counter++;
         }
         this.futures[key] = future;
         return key;
@@ -29,10 +29,10 @@ export class Registry {
     }
 
     #pop(key) {
-        if (!(key in this.futures)) {
+        const future = this.futures[key];
+        if (!future) {
             throw new Error(`Future key ${key} does not exist`);
         }
-        const future = this.futures[key];
         delete this.futures[key];
         this.keys.push(key);
         return future;
