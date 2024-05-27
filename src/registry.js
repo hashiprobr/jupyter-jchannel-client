@@ -1,18 +1,22 @@
 export class Registry {
+    #counter;
+    #keys;
+    #futures;
+
     constructor() {
-        this.counter = 0;
-        this.keys = [];
-        this.futures = {};
+        this.#counter = 0;
+        this.#keys = [];
+        this.#futures = {};
     }
 
     store(future) {
         let key;
-        if (this.keys.length) {
-            key = this.keys.pop();
+        if (this.#keys.length) {
+            key = this.#keys.pop();
         } else {
-            key = this.counter++;
+            key = this.#counter++;
         }
-        this.futures[key] = future;
+        this.#futures[key] = future;
         return key;
     }
 
@@ -21,7 +25,7 @@ export class Registry {
     }
 
     clear() {
-        const keys = Object.keys(this.futures);
+        const keys = Object.keys(this.#futures);
         for (const key of keys) {
             const future = this.#pop(key);
             future.cancel('Client disconnected');
@@ -29,12 +33,12 @@ export class Registry {
     }
 
     #pop(key) {
-        const future = this.futures[key];
+        const future = this.#futures[key];
         if (!future) {
             throw new Error(`Future key ${key} does not exist`);
         }
-        delete this.futures[key];
-        this.keys.push(key);
+        delete this.#futures[key];
+        this.#keys.push(key);
         return future;
     }
 }

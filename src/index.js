@@ -1,19 +1,21 @@
 import { Client } from './client';
 
 export class Index {
+    #clients;
+
     constructor() {
-        this.clients = {};
+        this.#clients = {};
     }
 
     start(url) {
-        const next = this.#start(url, this.clients[url]);
-        this.clients[url] = next;
+        const next = this.#start(url, this.#clients[url]);
+        this.#clients[url] = next;
         return next;
     }
 
     stop(url) {
-        const none = this.#stop(this.clients[url]);
-        delete this.clients[url];
+        const none = this.#stop(this.#clients[url]);
+        delete this.#clients[url];
         return none;
     }
 

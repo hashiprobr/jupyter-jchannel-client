@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import http from 'http';
 import loop from '../loop';
 
-import { StateError, KernelError } from '../error';
+import { StateError, KernelError } from '../types';
 import { Registry } from '../registry';
 import { Client } from '../client';
 
@@ -18,6 +18,10 @@ jest.mock('../channel', () => {
     return {
         Channel: jest.fn().mockImplementation((client, key) => {
             const channel = {
+                close() {
+                    delete client._channels[key];
+                },
+
                 _handleCall(name, args) {
                     if (name === 'error') {
                         throw new Error();
@@ -36,7 +40,7 @@ jest.mock('../channel', () => {
                 },
             };
 
-            client.channels[key] = channel;
+            client._channels[key] = channel;
 
             return channel;
         }),
@@ -360,8 +364,8 @@ test('does not open twice', async () => {
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('exception');
-    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -448,8 +452,8 @@ test('does not close', async () => {
     await c.disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('exception');
-    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });

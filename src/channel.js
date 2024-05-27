@@ -1,20 +1,32 @@
-export class Channel {
-    constructor(client, key) {
-        client.channels[key] = this;
+import { StateError } from './types';
 
-        this.client = client;
-        this.key = key;
-        this.handler = null;
+export class Channel {
+    #client;
+    #key;
+    #handler;
+
+    constructor(client, key) {
+        client._channels[key] = this;
+
+        this.#client = client;
+        this.#key = key;
+        this.#handler = null;
     }
 
-    setHandler(handler) {
+    close() {
+        delete this.#client._channels[this.#key];
+
+        this.#client = null;
+    }
+
+    set handler(handler) {
         if (typeof handler !== 'object') {
             throw new TypeError('Handler must be an object');
         }
         if (handler === null) {
             throw new Error('Handler cannot be null');
         }
-        this.handler = handler;
+        this.#handler = handler;
     }
 
     _handleCall(name, args) {
@@ -24,11 +36,11 @@ export class Channel {
     }
 
     #method(name) {
-        if (this.handler === null) {
+        if (this.#handler === null) {
             throw new Error('Channel does not have handler');
         }
 
-        const method = this.handler[name];
+        const method = this.#handler[name];
 
         if (typeof method !== 'function') {
             throw new Error(`Handler does not have method ${name}`);
@@ -46,7 +58,11 @@ export class Channel {
     }
 
     async #send(bodyType, input) {
-        const future = await this.client._send(bodyType, input, this.key);
+        if (this.#client === null) {
+            throw new StateError('Channel is closed');
+        }
+
+        const future = await this.#client._send(bodyType, input, this.#key);
 
         return await future;
     }

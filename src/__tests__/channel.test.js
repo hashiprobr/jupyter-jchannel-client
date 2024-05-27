@@ -1,12 +1,13 @@
+import { StateError } from '../types';
 import { Channel } from '../channel';
 
-const KEY = 0;
+const KEY = 123;
 
 let client, c;
 
 beforeEach(() => {
     client = {
-        channels: [],
+        _channels: {},
 
         async _send(bodyType, input, key) {  // eslint-disable-line require-await
             return Promise.resolve([bodyType, input, key]);
@@ -21,59 +22,60 @@ afterEach(() => {
 });
 
 test('instantiates', () => {
-    expect(client.channels[KEY]).toBe(c);
-    expect(c.client).toBe(client);
-    expect(c.key).toBe(KEY);
-    expect(c.handler).toBeNull();
-});
-
-test('sets handler', () => {
-    const handler = {};
-    c.setHandler(handler);
-    expect(c.handler).toBe(handler);
+    expect(client._channels[KEY]).toBe(c);
 });
 
 test('does not set non-object handler', () => {
-    expect(() => c.setHandler(0)).toThrow(TypeError);
+    expect(() => {
+        c.handler = true;
+    }).toThrow(TypeError);
 });
 
 test('does not set null handler', () => {
-    expect(() => c.setHandler(null)).toThrow(Error);
+    expect(() => {
+        c.handler = null;
+    }).toThrow(Error);
 });
 
 test('handles call with result', () => {
-    c.setHandler({
+    c.handler = {
         name(a, b) {
             return a + b;
         },
-    });
-    expect(c._handleCall('name', [2, 3])).toBe(5);
+    };
+    expect(c._handleCall('name', [1, 2])).toBe(3);
 });
 
 test('handles call with exception', () => {
-    c.setHandler({
+    c.handler = {
         name() {
             throw Error();
         },
-    });
-    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
+    };
+    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
 });
 
 test('does not handle call without handler', () => {
-    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
+    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
 });
 
 test('does not handle call without handler method', () => {
-    c.setHandler({});
-    expect(() => c._handleCall('name', [2, 3])).toThrow(Error);
+    c.handler = {};
+    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
 });
 
 test('echoes', async () => {
-    const output = ['echo', [2, 3], KEY];
-    await expect(c.echo(2, 3)).resolves.toStrictEqual(output);
+    const output = ['echo', [1, 2], KEY];
+    await expect(c.echo(1, 2)).resolves.toStrictEqual(output);
 });
 
 test('calls', async () => {
-    const output = ['call', { name: 'name', args: [2, 3] }, KEY];
-    await expect(c.call('name', 2, 3)).resolves.toStrictEqual(output);
+    const output = ['call', { name: 'name', args: [1, 2] }, KEY];
+    await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);
+});
+
+test('closes and does not call', async () => {
+    c.close();
+    expect(KEY in client._channels).toBe(false);
+    await expect(c.call('name', 1, 2)).rejects.toThrow(StateError);
 });

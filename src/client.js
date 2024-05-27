@@ -1,6 +1,6 @@
 import loop from './loop';
 
-import { StateError, KernelError } from './error';
+import { StateError, KernelError } from './types';
 import { Registry } from './registry';
 import { Channel } from './channel';
 
@@ -9,15 +9,15 @@ export class Client {
         const socket = new WebSocket(`${url}/socket`);
 
         this.connection = new Promise((resolve, reject) => {
-            let open = false;
+            let opened = false;
 
             socket.addEventListener('open', () => {
-                open = true;
+                opened = true;
                 resolve(socket);
             });
 
             socket.addEventListener('error', () => {
-                if (open) {
+                if (opened) {
                     console.error('Caught unexpected exception');
                 } else {
                     reject(new Error('Client could not connect'));
@@ -66,11 +66,13 @@ export class Client {
                     default:
                         input = JSON.parse(payload);
 
+                        channel = this._channels[channelKey];
+
                         switch (bodyType) {
                             case 'open':
-                                if (channelKey in this.channels) {
-                                    payload = 'Channel has already been opened';
-                                    bodyType = 'exception';
+                                if (channel) {
+                                    payload = channel._payload;
+                                    bodyType = 'result';
                                 } else {
                                     if (typeof input === 'string') {
                                         try {
@@ -89,6 +91,7 @@ export class Client {
                                                     payload = 'null';
                                                 }
 
+                                                channel._payload = payload;
                                                 bodyType = 'result';
                                             } else {
                                                 payload = 'Code must represent a function';
@@ -105,19 +108,13 @@ export class Client {
                                 }
                                 break;
                             case 'close':
-                                if (channelKey in this.channels) {
-                                    delete this.channels[channelKey];
-
-                                    payload = 'null';
-                                    bodyType = 'result';
-                                } else {
-                                    payload = `Channel key ${channelKey} does not exist`;
-                                    bodyType = 'exception';
+                                if (channel) {
+                                    channel.close();
                                 }
+                                payload = 'null';
+                                bodyType = 'result';
                                 break;
                             default: {
-                                channel = this.channels[channelKey];
-
                                 if (channel) {
                                     try {
                                         switch (bodyType) {
@@ -167,7 +164,7 @@ export class Client {
         });
 
         this.registry = new Registry();
-        this.channels = {};
+        this._channels = {};
     }
 
     async _send(bodyType, input, channelKey) {
