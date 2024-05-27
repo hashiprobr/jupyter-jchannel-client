@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import http from 'http';
 import loop from '../loop';
 
-import { StateError, KernelError } from '../types';
+import { KernelError, StateError } from '../types';
 import { Registry } from '../registry';
 import { Client } from '../client';
 

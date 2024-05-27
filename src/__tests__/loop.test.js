@@ -1,4 +1,4 @@
-import { CancelledError, Loop } from '../loop';
+import { Loop, CancelledError } from '../loop';
 
 let f;
 
