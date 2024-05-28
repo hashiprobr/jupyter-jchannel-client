@@ -140,18 +140,16 @@ export class Client {
         });
 
         this._connection = new Promise((resolve, reject) => {
-            let opened = false;
+            let closed = true;
 
             socket.addEventListener('open', () => {
-                opened = true;
+                closed = false;
                 resolve(socket);
             });
 
             socket.addEventListener('error', () => {
-                if (opened) {
-                    console.error('Caught unexpected exception');
-                } else {
-                    reject(new Error('Client could not connect'));
+                if (closed) {
+                    reject(new Error('Could not connect client'));
                 }
             });
         });

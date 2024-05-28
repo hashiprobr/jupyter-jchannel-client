@@ -4,6 +4,7 @@ import loop from '../loop';
 
 import { KernelError, StateError } from '../types';
 import { Registry } from '../registry';
+import { Channel } from '../channel';
 import { Client } from '../client';
 
 jest.mock('../loop');
@@ -16,41 +17,43 @@ jest.mock('../registry', () => {
 
 jest.mock('../channel', () => {
     return {
-        Channel: jest.fn().mockImplementation((client, key) => {
-            const channel = {
-                close() {
-                    delete client._channels[key];
-                },
-
-                _handleCall(name, args) {
-                    if (name === 'error') {
-                        throw new Error();
-                    }
-                    if (name === 'undef') {
-                        return;
-                    }
-                    if (name === 'async') {
-                        return this._resolve(args);
-                    }
-                    return args;
-                },
-
-                async _resolve(args) {  // eslint-disable-line require-await
-                    return args;
-                },
-            };
-
-            client._channels[key] = channel;
-
-            return channel;
-        }),
+        Channel: jest.fn(),
     };
 });
 
-const FUTURE_KEY = 0;
-const CHANNEL_KEY = 1;
+const FUTURE_KEY = 123;
+const CHANNEL_KEY = 456;
 
 let c, s;
+
+function mockChannel(client, key) {
+    const channel = {
+        close() {
+            delete client._channels[key];
+        },
+
+        _handleCall(name, args) {
+            if (name === 'error') {
+                throw new Error();
+            }
+            if (name === 'undef') {
+                return;
+            }
+            if (name === 'async') {
+                return this._resolve(args);
+            }
+            return args;
+        },
+
+        async _resolve(args) {  // eslint-disable-line require-await
+            return args;
+        },
+    };
+
+    client._channels[key] = channel;
+
+    return channel;
+}
 
 function start() {
     const future = {
@@ -70,6 +73,8 @@ function start() {
 
     registry.store.mockReturnValue(FUTURE_KEY);
     registry.retrieve.mockReturnValue(future);
+
+    Channel.mockImplementation(mockChannel);
 
     return new Client('ws://localhost:8889');
 }
@@ -255,9 +260,8 @@ test('receives unexpected message type', async () => {
     await send('socket-bytes');
     await c._disconnection;
     await s.stop();
-    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
-    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
 });
 
 test('receives empty message', async () => {
@@ -268,9 +272,8 @@ test('receives empty message', async () => {
     await send('empty-message');
     await c._disconnection;
     await s.stop();
-    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
-    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
 });
 
 test('receives empty body', async () => {
@@ -281,9 +284,8 @@ test('receives empty body', async () => {
     await send('empty-body');
     await c._disconnection;
     await s.stop();
-    expect(error).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
-    expect(error).toHaveBeenNthCalledWith(2, expect.any(String));
 });
 
 test('receives exception', async () => {
