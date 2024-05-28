@@ -8,30 +8,6 @@ export class Client {
     constructor(url) {
         const socket = new WebSocket(`${url}/socket`);
 
-        this.connection = new Promise((resolve, reject) => {
-            let opened = false;
-
-            socket.addEventListener('open', () => {
-                opened = true;
-                resolve(socket);
-            });
-
-            socket.addEventListener('error', () => {
-                if (opened) {
-                    console.error('Caught unexpected exception');
-                } else {
-                    reject(new Error('Client could not connect'));
-                }
-            });
-        });
-
-        this.disconnection = new Promise((resolve) => {
-            socket.addEventListener('close', () => {
-                this.registry.clear();
-                resolve();
-            });
-        });
-
         socket.addEventListener('message', async (event) => {
             try {
                 const messageType = typeof event.data;
@@ -54,13 +30,13 @@ export class Client {
 
                 switch (bodyType) {
                     case 'exception':
-                        future = this.registry.retrieve(futureKey);
+                        future = this._registry.retrieve(futureKey);
                         future.setException(new KernelError(payload));
                         break;
                     case 'result':
                         output = JSON.parse(payload);
 
-                        future = this.registry.retrieve(futureKey);
+                        future = this._registry.retrieve(futureKey);
                         future.setResult(output);
                         break;
                     default:
@@ -163,12 +139,36 @@ export class Client {
             }
         });
 
-        this.registry = new Registry();
+        this._connection = new Promise((resolve, reject) => {
+            let opened = false;
+
+            socket.addEventListener('open', () => {
+                opened = true;
+                resolve(socket);
+            });
+
+            socket.addEventListener('error', () => {
+                if (opened) {
+                    console.error('Caught unexpected exception');
+                } else {
+                    reject(new Error('Client could not connect'));
+                }
+            });
+        });
+
+        this._disconnection = new Promise((resolve) => {
+            socket.addEventListener('close', () => {
+                this._registry.clear();
+                resolve();
+            });
+        });
+
+        this._registry = new Registry();
         this._channels = {};
     }
 
     async _send(bodyType, input, channelKey) {
-        const socket = await this.connection;
+        const socket = await this._connection;
 
         if (socket.readyState !== WebSocket.OPEN) {
             throw new StateError('Client not connected');
@@ -179,7 +179,7 @@ export class Client {
         const future = loop.createFuture();
 
         const body = {
-            future: this.registry.store(future),
+            future: this._registry.store(future),
             channel: channelKey,
             payload,
         };
