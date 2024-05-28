@@ -24,7 +24,7 @@ export class Index {
             const client = await prev;
 
             try {
-                const socket = await client.connection;
+                const socket = await client._connection;
 
                 if (socket.readyState === WebSocket.OPEN) {
                     return client;
@@ -44,7 +44,7 @@ export class Index {
             const client = await prev;
 
             try {
-                const socket = await client.connection;
+                const socket = await client._connection;
 
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.close();

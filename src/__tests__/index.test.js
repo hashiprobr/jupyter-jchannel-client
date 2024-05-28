@@ -13,7 +13,7 @@ let i;
 
 function mockClient(readyState) {
     const client = {
-        connection: new Promise((resolve, reject) => {
+        _connection: new Promise((resolve, reject) => {
             if (readyState === null) {
                 reject(new Error());
             } else {
@@ -55,7 +55,7 @@ test('stops, starts, connects, starts, and stops', async () => {
     await expect(start()).resolves.toBe(client);
     await expect(start()).resolves.toBe(client);
     await stop();
-    const socket = await client.connection;
+    const socket = await client._connection;
     expect(socket.close).toHaveBeenCalledTimes(1);
 });
 
@@ -67,9 +67,9 @@ test('starts, connects, disconnects, stops, starts, connects, and stops', async 
     const client1 = mockClient(WebSocket.OPEN);
     await expect(start()).resolves.toBe(client1);
     await stop();
-    const socket0 = await client0.connection;
+    const socket0 = await client0._connection;
     expect(socket0.close).toHaveBeenCalledTimes(0);
-    const socket1 = await client1.connection;
+    const socket1 = await client1._connection;
     expect(socket1.close).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.any(String));
@@ -82,9 +82,9 @@ test('starts, connects, disconnects, starts, reconnects, and stops', async () =>
     const client1 = mockClient(WebSocket.OPEN);
     await expect(start()).resolves.toBe(client1);
     await stop();
-    const socket0 = await client0.connection;
+    const socket0 = await client0._connection;
     expect(socket0.close).toHaveBeenCalledTimes(0);
-    const socket1 = await client1.connection;
+    const socket1 = await client1._connection;
     expect(socket1.close).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.any(String));
@@ -98,8 +98,8 @@ test('starts, does not connect, stops, starts, connects, and stops', async () =>
     const client1 = mockClient(WebSocket.OPEN);
     await expect(start()).resolves.toBe(client1);
     await stop();
-    await expect(client0.connection).rejects.toThrow(Error);
-    const socket1 = await client1.connection;
+    await expect(client0._connection).rejects.toThrow(Error);
+    const socket1 = await client1._connection;
     expect(socket1.close).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.any(String));
@@ -112,8 +112,8 @@ test('starts, does not connect, starts, connects, and stops', async () => {
     const client1 = mockClient(WebSocket.OPEN);
     await expect(start()).resolves.toBe(client1);
     await stop();
-    await expect(client0.connection).rejects.toThrow(Error);
-    const socket1 = await client1.connection;
+    await expect(client0._connection).rejects.toThrow(Error);
+    const socket1 = await client1._connection;
     expect(socket1.close).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.any(String));

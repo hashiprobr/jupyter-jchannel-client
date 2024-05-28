@@ -198,10 +198,14 @@ export class Client {
     #message(error) {
         console.error(error);
 
-        if (typeof error.message === 'string' && error.message) {
-            return error.message;
+        let message;
+        if (error instanceof Error && typeof error.message === 'string' && error.message) {
+            message = error.message;
+        } else {
+            message = 'Check the browser console for details';
         }
-        return 'Check the browser console for details';
+
+        return `${error.constructor.name}: ${message}`;
     }
 
     #pop(body, name) {

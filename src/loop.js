@@ -1,4 +1,8 @@
 export class CancelledError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'CancelledError';
+    }
 }
 
 export class Loop {
