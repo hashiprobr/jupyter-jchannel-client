@@ -261,7 +261,7 @@ test('receives unexpected message type', async () => {
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(TypeError));
 });
 
 test('receives empty message', async () => {
@@ -273,7 +273,7 @@ test('receives empty message', async () => {
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(SyntaxError));
 });
 
 test('receives empty body', async () => {
@@ -400,7 +400,7 @@ test('does not open with invalid code', async () => {
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(SyntaxError));
 });
 
 test('does not open with non-function code', async () => {
