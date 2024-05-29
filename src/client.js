@@ -74,7 +74,9 @@ export class Client {
                                                 bodyType = 'exception';
                                             }
                                         } catch (error) {
-                                            payload = this.#message(error);
+                                            console.error('Channel opening exception', error);
+
+                                            payload = String(error);
                                             bodyType = 'exception';
                                         }
                                     } else {
@@ -115,12 +117,12 @@ export class Client {
                                                 bodyType = 'exception';
                                         }
                                     } catch (error) {
-                                        payload = this.#message(error);
+                                        console.error('Channel request exception', error);
+
+                                        payload = String(error);
                                         bodyType = 'exception';
                                     }
                                 } else {
-                                    console.warn('Unexpected channel closure');
-
                                     payload = null;
                                     bodyType = 'closed';
                                 }
@@ -132,7 +134,7 @@ export class Client {
                         this.#accept(socket, bodyType, body);
                 }
             } catch (error) {
-                console.error(error);
+                console.error('Socket message exception', error);
 
                 socket.dispatchEvent(new Event('error'));
                 socket.close();
@@ -193,19 +195,6 @@ export class Client {
         const data = JSON.stringify(body);
 
         socket.send(data);
-    }
-
-    #message(error) {
-        console.error(error);
-
-        let message;
-        if (error instanceof Error && typeof error.message === 'string' && error.message) {
-            message = error.message;
-        } else {
-            message = 'Check the browser console for details';
-        }
-
-        return `${error.constructor.name}: ${message}`;
     }
 
     #pop(body, name) {

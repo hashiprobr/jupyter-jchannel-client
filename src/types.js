@@ -1,13 +1,12 @@
-export class StateError extends Error {
+export class CustomError extends Error {
     constructor(message) {
         super(message);
-        this.name = 'StateError';
+        this.name = this.constructor.name;
     }
 }
 
-export class KernelError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'KernelError';
-    }
+export class StateError extends CustomError {
+}
+
+export class KernelError extends CustomError {
 }

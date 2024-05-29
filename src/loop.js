@@ -1,8 +1,6 @@
-export class CancelledError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'CancelledError';
-    }
+import { CustomError } from './types';
+
+export class CancelledError extends CustomError {
 }
 
 export class Loop {

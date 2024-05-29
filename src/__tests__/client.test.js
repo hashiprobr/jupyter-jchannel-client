@@ -261,7 +261,7 @@ test('receives unexpected message type', async () => {
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(Error));
 });
 
 test('receives empty message', async () => {
@@ -273,7 +273,7 @@ test('receives empty message', async () => {
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(Error));
 });
 
 test('receives empty body', async () => {
@@ -285,7 +285,7 @@ test('receives empty body', async () => {
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenNthCalledWith(1, expect.any(Error));
+    expect(error).toHaveBeenNthCalledWith(1, expect.any(String), expect.any(Error));
 });
 
 test('receives exception', async () => {
@@ -400,7 +400,7 @@ test('does not open with invalid code', async () => {
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(Error));
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
 test('does not open with non-function code', async () => {
@@ -476,7 +476,6 @@ test('echoes', async () => {
 });
 
 test('does not echo', async () => {
-    const warn = jest.spyOn(console, 'warn');
     await s.start();
     c = start();
     await c._connection;
@@ -488,8 +487,6 @@ test('does not echo', async () => {
     expect(s.body.payload).toBeNull();
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith(expect.any(String));
 });
 
 test('calls', async () => {
@@ -552,7 +549,7 @@ test('calls error', async () => {
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
     expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(Error));
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
 test('receives unexpected body type', async () => {
