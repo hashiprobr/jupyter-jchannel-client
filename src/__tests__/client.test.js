@@ -24,7 +24,7 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
 
-let c, s;
+let c, s, future;
 
 function mockChannel(client, key) {
     const channel = {
@@ -56,7 +56,7 @@ function mockChannel(client, key) {
 }
 
 function start() {
-    const future = {
+    future = {
         setResult: jest.fn(),
         setException: jest.fn(),
     };
@@ -292,7 +292,7 @@ test('receives exception', async () => {
     await s.start();
     c = start();
     await c._connection;
-    const future = await send('mock-exception');
+    await send('mock-exception');
     await send('socket-close');
     await c._disconnection;
     await s.stop();
@@ -306,7 +306,7 @@ test('receives result', async () => {
     await s.start();
     c = start();
     await c._connection;
-    const future = await send('mock-result');
+    await send('mock-result');
     await send('socket-close');
     await c._disconnection;
     await s.stop();
