@@ -76,7 +76,7 @@ function start() {
 
     Channel.mockImplementation(mockChannel);
 
-    return new Client('ws://localhost:8889');
+    return new Client('http://localhost:8889');
 }
 
 async function send(bodyType, input = null) {

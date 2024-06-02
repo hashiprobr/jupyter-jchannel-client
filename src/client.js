@@ -6,7 +6,7 @@ import { Channel } from './channel';
 
 export class Client {
     constructor(url) {
-        const socket = new WebSocket(`${url}/socket`);
+        const socket = new WebSocket(`ws${url.slice(4)}/socket`);
 
         socket.addEventListener('message', async (event) => {
             try {

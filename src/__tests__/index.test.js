@@ -7,7 +7,7 @@ jest.mock('../client', () => {
     };
 });
 
-const URL = 'ws://localhost:8889';
+const URL = 'http://localhost:8889';
 
 let i;
 
