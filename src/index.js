@@ -15,8 +15,12 @@ export class Index {
 
     stop(url) {
         const none = this.#stop(this.#clients[url]);
-        delete this.#clients[url];
+        this._unload(url);
         return none;
+    }
+
+    _unload(url) {
+        delete this.#clients[url];
     }
 
     async #start(url, prev) {
