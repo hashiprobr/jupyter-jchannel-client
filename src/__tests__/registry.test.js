@@ -60,7 +60,7 @@ test('stores and clears', () => {
     const key1 = r.store(future1);
     r.clear();
     expect(() => r.retrieve(key1)).toThrow(Error);
-    expect(future1.cancel).toHaveBeenCalledTimes(1);
+    expect(future1.cancel).toHaveBeenCalledWith(expect.any(String));
     expect(() => r.retrieve(key0)).toThrow(Error);
-    expect(future0.cancel).toHaveBeenCalledTimes(1);
+    expect(future0.cancel).toHaveBeenCalledWith(expect.any(String));
 });

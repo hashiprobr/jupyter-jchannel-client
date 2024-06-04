@@ -61,8 +61,6 @@ function start() {
         setException: jest.fn(),
     };
 
-    loop.createFuture.mockReturnValue(future);
-
     const registry = {
         store: jest.fn(),
         retrieve: jest.fn(),
