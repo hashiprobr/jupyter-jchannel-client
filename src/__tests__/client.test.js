@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import http from 'http';
-import loop from '../loop';
 
 import { KernelError, StateError } from '../types';
 import { Registry } from '../registry';
@@ -24,7 +23,7 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
 
-let c, s, future;
+let s, future;
 
 function mockChannel(client, key) {
     const channel = {
@@ -55,12 +54,7 @@ function mockChannel(client, key) {
     return channel;
 }
 
-function start() {
-    future = {
-        setResult: jest.fn(),
-        setException: jest.fn(),
-    };
-
+function client() {
     const registry = {
         store: jest.fn(),
         retrieve: jest.fn(),
@@ -77,12 +71,12 @@ function start() {
     return new Client('http://localhost:8889');
 }
 
-async function send(bodyType, input = null) {
+async function send(c, bodyType, input = null) {
     return await c._send(bodyType, input, CHANNEL_KEY);
 }
 
-async function open(code = '() => { }') {
-    await send('open', code);
+async function open(c, code = '() => { }') {
+    await send(c, 'open', code);
 }
 
 beforeEach(() => {
@@ -213,6 +207,11 @@ beforeEach(() => {
             });
         });
     };
+
+    future = {
+        setResult: jest.fn(),
+        setException: jest.fn(),
+    };
 });
 
 afterEach(() => {
@@ -220,30 +219,30 @@ afterEach(() => {
 });
 
 test('does not connect and does not send', async () => {
-    c = start();
+    const c = client();
     await expect(c._connection).rejects.toThrow(Error);
     await c._disconnection;
-    await expect(send('')).rejects.toThrow(Error);
+    await expect(send(c, '')).rejects.toThrow(Error);
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('connects, disconnects, and does not send', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await expect(c._connection).resolves.toBeInstanceOf(WebSocket);
-    await send('socket-close');
+    await send(c, 'socket-close');
     await c._disconnection;
-    await expect(send('')).rejects.toThrow(StateError);
+    await expect(send(c, '')).rejects.toThrow(StateError);
     await s.stop();
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('connects, pongs, and disconnects', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('socket-heart');
-    await send('socket-close');
+    await send(c, 'socket-heart');
+    await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
     expect(s.heartbeat).toBe(true);
@@ -253,9 +252,9 @@ test('connects, pongs, and disconnects', async () => {
 test('receives unexpected message type', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('socket-bytes');
+    await send(c, 'socket-bytes');
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
@@ -265,9 +264,9 @@ test('receives unexpected message type', async () => {
 test('receives empty message', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('empty-message');
+    await send(c, 'empty-message');
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
@@ -277,9 +276,9 @@ test('receives empty message', async () => {
 test('receives empty body', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('empty-body');
+    await send(c, 'empty-body');
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
@@ -288,10 +287,10 @@ test('receives empty body', async () => {
 
 test('receives exception', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('mock-exception');
-    await send('socket-close');
+    await send(c, 'mock-exception');
+    await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
     const [args] = future.setException.mock.calls;
@@ -302,10 +301,10 @@ test('receives exception', async () => {
 
 test('receives result', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('mock-result');
-    await send('socket-close');
+    await send(c, 'mock-result');
+    await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
     const [args] = future.setResult.mock.calls;
@@ -315,9 +314,9 @@ test('receives result', async () => {
 
 test('opens', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open('() => 0');
+    await open(c, '() => 0');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -329,9 +328,9 @@ test('opens', async () => {
 
 test('opens async', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open('async () => 0');
+    await open(c, 'async () => 0');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -343,9 +342,9 @@ test('opens async', async () => {
 
 test('opens undef', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
+    await open(c);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -357,10 +356,10 @@ test('opens undef', async () => {
 
 test('does not open twice', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await open();
+    await open(c);
+    await open(c);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -372,9 +371,9 @@ test('does not open twice', async () => {
 
 test('does not open error', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open('() => { throw new Error(); }');
+    await open(c, '() => { throw new Error(); }');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -387,9 +386,9 @@ test('does not open error', async () => {
 test('does not open with invalid code', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open('() =>');
+    await open(c, '() =>');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -403,9 +402,9 @@ test('does not open with invalid code', async () => {
 
 test('does not open with non-function code', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open('0');
+    await open(c, '0');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -417,9 +416,9 @@ test('does not open with non-function code', async () => {
 
 test('does not open with non-string code', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open(0);
+    await open(c, 0);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -431,10 +430,10 @@ test('does not open with non-string code', async () => {
 
 test('closes', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('close');
+    await open(c);
+    await send(c, 'close');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -446,9 +445,9 @@ test('closes', async () => {
 
 test('does not close', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('close');
+    await send(c, 'close');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -460,10 +459,10 @@ test('does not close', async () => {
 
 test('echoes', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('echo', 1);
+    await open(c);
+    await send(c, 'echo', 1);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -475,9 +474,9 @@ test('echoes', async () => {
 
 test('does not echo', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await send('echo', 1);
+    await send(c, 'echo', 1);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -489,10 +488,10 @@ test('does not echo', async () => {
 
 test('calls', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('call', { name: 'name', args: [2, 3] });
+    await open(c);
+    await send(c, 'call', { name: 'name', args: [2, 3] });
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -504,10 +503,10 @@ test('calls', async () => {
 
 test('calls async', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('call', { name: 'async', args: [2, 3] });
+    await open(c);
+    await send(c, 'call', { name: 'async', args: [2, 3] });
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -519,10 +518,10 @@ test('calls async', async () => {
 
 test('calls undef', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('call', { name: 'undef', args: [2, 3] });
+    await open(c);
+    await send(c, 'call', { name: 'undef', args: [2, 3] });
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -535,10 +534,10 @@ test('calls undef', async () => {
 test('calls error', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('call', { name: 'error', args: [2, 3] });
+    await open(c);
+    await send(c, 'call', { name: 'error', args: [2, 3] });
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -552,10 +551,10 @@ test('calls error', async () => {
 
 test('receives unexpected body type', async () => {
     await s.start();
-    c = start();
+    const c = client();
     await c._connection;
-    await open();
-    await send('type');
+    await open(c);
+    await send(c, 'type');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
