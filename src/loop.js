@@ -1,6 +1,6 @@
-import { CustomError } from './types';
+import { AbstractError } from './types';
 
-export class CancelledError extends CustomError {
+export class CancelledError extends AbstractError {
 }
 
 export class Loop {
