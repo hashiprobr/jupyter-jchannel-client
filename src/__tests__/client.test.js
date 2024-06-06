@@ -72,7 +72,7 @@ function client() {
 }
 
 async function send(c, bodyType, input = null) {
-    return await c._send(bodyType, input, CHANNEL_KEY);
+    await c._send(bodyType, input, CHANNEL_KEY);
 }
 
 async function open(c, code = '() => { }') {
