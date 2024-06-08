@@ -80,119 +80,119 @@ async function open(c, code = '() => { }') {
 }
 
 beforeEach(() => {
-    const encoder = new TextEncoder();
-
-    function encode(bodyType, payload) {
-        const body = {
-            future: FUTURE_KEY,
-            channel: CHANNEL_KEY,
-            payload,
-        };
-
-        body.type = bodyType;
-
-        const data = JSON.stringify(body);
-
-        return encoder.encode(data);
-    }
-
     s = http.createServer();
+
+    s.beating = false;
+    s.body = null;
+
+    s.session = new Promise((resolve) => {
+        const encoder = new TextEncoder();
+
+        s.on('upgrade', (request, socket) => {
+            function encode(bodyType, payload) {
+                const body = {
+                    future: FUTURE_KEY,
+                    channel: CHANNEL_KEY,
+                    payload,
+                };
+
+                body.type = bodyType;
+
+                const data = JSON.stringify(body);
+
+                return encoder.encode(data);
+            }
+
+            function write(bytes) {
+                socket.write(new Uint8Array([0b10000001, bytes.length, ...bytes]));
+            }
+
+            const key = request.headers['sec-websocket-key'];
+            const magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+            const accept = crypto.createHash('sha1')
+                .update(`${key}${magic}`)
+                .digest('base64');
+
+            let open = true;
+
+            socket.write([
+                'HTTP/1.1 101 Switching Protocols',
+                'Connection: Upgrade',
+                'Upgrade: WebSocket',
+                `Sec-WebSocket-Accept: ${accept}`,
+                '\r\n',
+            ].join('\r\n'));
+
+            socket.on('data', (chunk) => {
+                while (chunk.length > 0) {
+                    const code = chunk[0] & 0b00001111;
+                    const end = 6 + chunk[1] & 0b01111111;
+
+                    const mask = chunk.subarray(2, 6);
+                    const bytes = chunk.subarray(6, end);
+
+                    for (let i = 0; i < bytes.length; i++) {
+                        bytes[i] ^= mask[i % 4];
+                    }
+
+                    if (code === 0x8) {
+                        if (open) {
+                            write(bytes);
+                        }
+                        socket.destroy();
+                        resolve();
+                        break;
+                    }
+
+                    if (code === 0xA) {
+                        s.beating = true;
+                    } else {
+                        const data = bytes.toString();
+
+                        const body = JSON.parse(data);
+
+                        switch (body.type) {
+                            case 'closed':
+                            case 'exception':
+                            case 'result':
+                                s.body = body;
+                            case 'socket-close':
+                                socket.write(new Uint8Array([0b10001000, 0]));
+                                open = false;
+                                break;
+                            case 'socket-heart':
+                                socket.write(new Uint8Array([0b10001001, 0]));
+                                break;
+                            case 'socket-bytes':
+                                socket.write(new Uint8Array([0b10000010, 0]));
+                                break;
+                            case 'empty-message':
+                                socket.write(new Uint8Array([0b10000001, 0]));
+                                break;
+                            case 'empty-body':
+                                socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
+                                break;
+                            case 'mock-exception':
+                                write(encode('exception', ''));
+                                break;
+                            case 'mock-result':
+                                write(encode('result', '0'));
+                                break;
+                            default:
+                                write(bytes);
+                        }
+                    }
+
+                    chunk = chunk.subarray(end);
+                }
+            });
+        });
+    });
 
     s.start = () => {
         return new Promise((resolve) => {
             s.on('listening', () => {
                 resolve();
-            });
-
-            s.on('upgrade', (request, socket) => {
-                function write(bytes) {
-                    socket.write(new Uint8Array([0b10000001, bytes.length, ...bytes]));
-                }
-
-                const key = request.headers['sec-websocket-key'];
-                const magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-                const accept = crypto.createHash('sha1')
-                    .update(`${key}${magic}`)
-                    .digest('base64');
-
-                socket.write([
-                    'HTTP/1.1 101 Switching Protocols',
-                    'Connection: Upgrade',
-                    'Upgrade: WebSocket',
-                    `Sec-WebSocket-Accept: ${accept}`,
-                    '\r\n',
-                ].join('\r\n'));
-
-                s.heartbeat = false;
-                s.body = null;
-
-                s.disconnection = new Promise((resolve) => {
-                    let open = true;
-
-                    socket.on('data', (chunk) => {
-                        while (chunk.length > 0) {
-                            const code = chunk[0] & 0b00001111;
-                            const end = 6 + chunk[1] & 0b01111111;
-
-                            const mask = chunk.subarray(2, 6);
-                            const bytes = chunk.subarray(6, end);
-
-                            for (let i = 0; i < bytes.length; i++) {
-                                bytes[i] ^= mask[i % 4];
-                            }
-
-                            if (code === 0x8) {
-                                if (open) {
-                                    write(bytes);
-                                }
-                                socket.destroy();
-                                resolve();
-                                break;
-                            }
-
-                            if (code === 0xA) {
-                                s.heartbeat = true;
-                            } else {
-                                const data = bytes.toString();
-
-                                const body = JSON.parse(data);
-
-                                switch (body.type) {
-                                    case 'closed':
-                                    case 'exception':
-                                    case 'result':
-                                        s.body = body;
-                                    case 'socket-close':
-                                        socket.write(new Uint8Array([0b10001000, 0]));
-                                        open = false;
-                                        break;
-                                    case 'socket-heart':
-                                        socket.write(new Uint8Array([0b10001001, 0]));
-                                        break;
-                                    case 'socket-bytes':
-                                        socket.write(new Uint8Array([0b10000010, 0]));
-                                        break;
-                                    case 'empty-message':
-                                        socket.write(new Uint8Array([0b10000001, 0]));
-                                        break;
-                                    case 'empty-body':
-                                        socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
-                                        break;
-                                    case 'mock-exception':
-                                        write(encode('exception', ''));
-                                        break;
-                                    case 'mock-result':
-                                        write(encode('result', '0'));
-                                        break;
-                                    default:
-                                        write(bytes);
-                                }
-                            }
-
-                            chunk = chunk.subarray(end);
-                        }
-                    });
-                });
             });
 
             s.listen(8889, 'localhost');
@@ -205,7 +205,7 @@ beforeEach(() => {
                 resolve();
             });
 
-            s.disconnection.then(() => {
+            s.session.then(() => {
                 s.close();
             });
         });
@@ -248,7 +248,7 @@ test('connects, pongs, and disconnects', async () => {
     await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
-    expect(s.heartbeat).toBe(true);
+    expect(s.beating).toBe(true);
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
