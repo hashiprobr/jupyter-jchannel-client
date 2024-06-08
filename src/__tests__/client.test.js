@@ -108,8 +108,8 @@ beforeEach(() => {
                 return encoder.encode(data);
             }
 
-            function write(bytes) {
-                socket.write(new Uint8Array([0b10000001, bytes.length, ...bytes]));
+            function write(byte, bytes) {
+                socket.write(new Uint8Array([byte, bytes.length, ...bytes]));
             }
 
             const key = request.headers['sec-websocket-key'];
@@ -118,7 +118,7 @@ beforeEach(() => {
                 .update(`${key}${magic}`)
                 .digest('base64');
 
-            let open = true;
+            let writing = true;
 
             socket.write([
                 'HTTP/1.1 101 Switching Protocols',
@@ -141,8 +141,8 @@ beforeEach(() => {
                     }
 
                     if (code === 0x8) {
-                        if (open) {
-                            write(bytes);
+                        if (writing) {
+                            write(0b10001000, bytes);
                         }
                         socket.destroy();
                         resolve();
@@ -163,7 +163,7 @@ beforeEach(() => {
                                 s.body = body;
                             case 'socket-close':
                                 socket.write(new Uint8Array([0b10001000, 0]));
-                                open = false;
+                                writing = false;
                                 break;
                             case 'socket-heart':
                                 socket.write(new Uint8Array([0b10001001, 0]));
@@ -178,13 +178,13 @@ beforeEach(() => {
                                 socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
                                 break;
                             case 'mock-exception':
-                                write(encode('exception', ''));
+                                write(0b10000001, encode('exception', ''));
                                 break;
                             case 'mock-result':
-                                write(encode('result', '0'));
+                                write(0b10000001, encode('result', '0'));
                                 break;
                             default:
-                                write(bytes);
+                                write(0b10000001, bytes);
                         }
                     }
 
