@@ -88,8 +88,11 @@ beforeEach(() => {
             channel: CHANNEL_KEY,
             payload,
         };
+
         body.type = bodyType;
+
         const data = JSON.stringify(body);
+
         return encoder.encode(data);
     }
 
