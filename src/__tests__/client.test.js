@@ -23,7 +23,7 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
 
-let s, future;
+let future, s;
 
 function mockChannel(client, key) {
     const channel = {
@@ -80,6 +80,11 @@ async function open(c, code = '() => { }') {
 }
 
 beforeEach(() => {
+    future = {
+        setResult: jest.fn(),
+        setException: jest.fn(),
+    };
+
     s = http.createServer();
 
     s.beating = false;
@@ -209,11 +214,6 @@ beforeEach(() => {
                 s.close();
             });
         });
-    };
-
-    future = {
-        setResult: jest.fn(),
-        setException: jest.fn(),
     };
 });
 
