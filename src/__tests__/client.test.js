@@ -170,10 +170,10 @@ beforeEach(() => {
                                 socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
                                 break;
                             case 'mock-exception':
-                                write(0b10000001, encode('exception', ''));
+                                write(0b10000001, encode('exception', 'message'));
                                 break;
                             case 'mock-result':
-                                write(0b10000001, encode('result', '0'));
+                                write(0b10000001, encode('result', 'true'));
                                 break;
                             default:
                                 write(0b10000001, bytes);
@@ -299,7 +299,7 @@ test('receives exception', async () => {
     const [args] = future.setException.mock.calls;
     const [error] = args;
     expect(error).toBeInstanceOf(KernelError);
-    expect(typeof error.message).toBe('string');
+    expect(error.message).toBe('message');
 });
 
 test('receives result', async () => {
@@ -312,7 +312,7 @@ test('receives result', async () => {
     await s.stop();
     const [args] = future.setResult.mock.calls;
     const [output] = args;
-    expect(output).toBe(0);
+    expect(output).toBe(true);
 });
 
 test('opens', async () => {
@@ -444,6 +444,7 @@ test('closes', async () => {
     expect(s.body.payload).toBe('null');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(CHANNEL_KEY in c._channels).toBe(false);
 });
 
 test('does not close', async () => {
