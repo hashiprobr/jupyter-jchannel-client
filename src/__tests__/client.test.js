@@ -229,10 +229,21 @@ test('does not connect and does not send', async () => {
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
+test('connects and closes', async () => {
+    await s.start();
+    const c = client();
+    const socket = await c._connection;
+    socket.dispatchEvent(new Event('error'));
+    socket.close();
+    await c._disconnection;
+    await s.stop();
+    expect(c._registry.clear).toHaveBeenCalledTimes(1);
+});
+
 test('connects, disconnects, and does not send', async () => {
     await s.start();
     const c = client();
-    await expect(c._connection).resolves.toBeInstanceOf(WebSocket);
+    await c._connection;
     await send(c, 'socket-close');
     await c._disconnection;
     await expect(send(c, '')).rejects.toThrow(StateError);

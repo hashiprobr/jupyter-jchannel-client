@@ -13,7 +13,7 @@ export class Client {
                 const messageType = typeof event.data;
 
                 if (messageType !== 'string') {
-                    throw new TypeError(`Received unexpected message type ${messageType}`);
+                    throw new TypeError(`Unexpected message type ${messageType}`);
                 }
 
                 const body = JSON.parse(event.data);
@@ -24,9 +24,9 @@ export class Client {
                 let bodyType = this.#pop(body, 'type');
 
                 let future;
+                let channel;
                 let input;
                 let output;
-                let channel;
 
                 switch (bodyType) {
                     case 'exception':
@@ -113,7 +113,7 @@ export class Client {
                                                 bodyType = 'result';
                                                 break;
                                             default:
-                                                payload = `Received unexpected body type ${bodyType}`;
+                                                payload = `Unexpected body type ${bodyType}`;
                                                 bodyType = 'exception';
                                         }
                                     } catch (error) {
@@ -136,7 +136,6 @@ export class Client {
             } catch (error) {
                 console.error('Socket message exception', error);
 
-                socket.dispatchEvent(new Event('error'));
                 socket.close();
             }
         });
@@ -146,12 +145,15 @@ export class Client {
 
             socket.addEventListener('open', () => {
                 closed = false;
+
                 resolve(socket);
             });
 
-            socket.addEventListener('error', () => {
+            socket.addEventListener('error', (event) => {
+                console.error('Socket error event', event);
+
                 if (closed) {
-                    reject(new Error('Could not connect client'));
+                    reject(new StateError('Client not connected'));
                 }
             });
         });
@@ -159,6 +161,7 @@ export class Client {
         this._disconnection = new Promise((resolve) => {
             socket.addEventListener('close', () => {
                 this._registry.clear();
+
                 resolve();
             });
         });
@@ -171,7 +174,7 @@ export class Client {
         const socket = await this._connection;
 
         if (socket.readyState !== WebSocket.OPEN) {
-            throw new StateError('Client not connected');
+            throw new StateError('Client has disconnected');
         }
 
         const payload = JSON.stringify(input);
