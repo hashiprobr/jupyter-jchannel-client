@@ -118,15 +118,7 @@ beforeEach(() => {
                 .update(`${key}${magic}`)
                 .digest('base64');
 
-            let writing = true;
-
-            socket.write([
-                'HTTP/1.1 101 Switching Protocols',
-                'Connection: Upgrade',
-                'Upgrade: WebSocket',
-                `Sec-WebSocket-Accept: ${accept}`,
-                '\r\n',
-            ].join('\r\n'));
+            let running = true;
 
             socket.on('data', (chunk) => {
                 while (chunk.length > 0) {
@@ -141,7 +133,7 @@ beforeEach(() => {
                     }
 
                     if (code === 0x8) {
-                        if (writing) {
+                        if (running) {
                             write(0b10001000, bytes);
                         }
                         socket.destroy();
@@ -163,7 +155,7 @@ beforeEach(() => {
                                 s.body = body;
                             case 'socket-close':
                                 socket.write(new Uint8Array([0b10001000, 0]));
-                                writing = false;
+                                running = false;
                                 break;
                             case 'socket-heart':
                                 socket.write(new Uint8Array([0b10001001, 0]));
@@ -191,6 +183,14 @@ beforeEach(() => {
                     chunk = chunk.subarray(end);
                 }
             });
+
+            socket.write([
+                'HTTP/1.1 101 Switching Protocols',
+                'Connection: Upgrade',
+                'Upgrade: WebSocket',
+                `Sec-WebSocket-Accept: ${accept}`,
+                '\r\n',
+            ].join('\r\n'));
         });
     });
 
