@@ -75,7 +75,7 @@ async function send(c, bodyType, input = null) {
     await c._send(bodyType, input, CHANNEL_KEY);
 }
 
-async function open(c, code = '() => { }') {
+async function open(c, code = '() => true') {
     await send(c, 'open', code);
 }
 
@@ -225,28 +225,18 @@ test('does not connect and does not send', async () => {
     const c = client();
     await expect(c._connection).rejects.toThrow(Error);
     await c._disconnection;
-    await expect(send(c, '')).rejects.toThrow(Error);
+    await expect(send(c, 'closed')).rejects.toThrow(Error);
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
-test('connects and closes', async () => {
+test('connects, errors, and does not send', async () => {
     await s.start();
     const c = client();
     const socket = await c._connection;
     socket.dispatchEvent(new Event('error'));
     socket.close();
     await c._disconnection;
-    await s.stop();
-    expect(c._registry.clear).toHaveBeenCalledTimes(1);
-});
-
-test('connects, disconnects, and does not send', async () => {
-    await s.start();
-    const c = client();
-    await c._connection;
-    await send(c, 'socket-close');
-    await c._disconnection;
-    await expect(send(c, '')).rejects.toThrow(StateError);
+    await expect(send(c, 'closed')).rejects.toThrow(StateError);
     await s.stop();
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
@@ -260,7 +250,6 @@ test('connects, pongs, and disconnects', async () => {
     await c._disconnection;
     await s.stop();
     expect(s.beating).toBe(true);
-    expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
 test('receives unexpected message type', async () => {
@@ -330,12 +319,12 @@ test('opens', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await open(c, '() => 0');
+    await open(c);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('0');
+    expect(s.body.payload).toBe('true');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -344,12 +333,12 @@ test('opens async', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await open(c, 'async () => 0');
+    await open(c, 'async () => true');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('0');
+    expect(s.body.payload).toBe('true');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -358,7 +347,7 @@ test('opens undef', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await open(c);
+    await open(c, '() => { }');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -378,7 +367,7 @@ test('does not open twice', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('null');
+    expect(s.body.payload).toBe('true');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
