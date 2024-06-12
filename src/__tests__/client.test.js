@@ -223,9 +223,9 @@ afterEach(() => {
 
 test('does not connect and does not send', async () => {
     const c = client();
-    await expect(c._connection).rejects.toThrow(Error);
+    await expect(c._connection).rejects.toThrow(StateError);
     await c._disconnection;
-    await expect(send(c, 'closed')).rejects.toThrow(Error);
+    await expect(send(c, 'closed')).rejects.toThrow(StateError);
     expect(c._registry.clear).toHaveBeenCalledTimes(1);
 });
 
