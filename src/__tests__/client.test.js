@@ -335,6 +335,21 @@ test('opens', async () => {
     expect(s.body.future).toBe(FUTURE_KEY);
 });
 
+test('opens twice', async () => {
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await open(c);
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('true');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
 test('opens async', async () => {
     await s.start();
     const c = client();
@@ -359,21 +374,6 @@ test('opens undef', async () => {
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe('null');
-    expect(s.body.channel).toBe(CHANNEL_KEY);
-    expect(s.body.future).toBe(FUTURE_KEY);
-});
-
-test('does not open twice', async () => {
-    await s.start();
-    const c = client();
-    await c._connection;
-    await open(c);
-    await open(c);
-    await c._disconnection;
-    await s.stop();
-    expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('true');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
@@ -413,7 +413,7 @@ test('does not open with non-function code', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await open(c, '0');
+    await open(c, 'true');
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -427,7 +427,7 @@ test('does not open with non-string code', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await open(c, 0);
+    await open(c, true);
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -541,7 +541,7 @@ test('calls undef', async () => {
     expect(s.body.future).toBe(FUTURE_KEY);
 });
 
-test('calls error', async () => {
+test('does not call error', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
     const c = client();
