@@ -255,6 +255,7 @@ test('connects, pings, and disconnects', async () => {
     await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
+    expect(c._registry.clear).toHaveBeenCalledTimes(1);
     expect(s.beating).toBe(true);
 });
 
@@ -379,6 +380,7 @@ test('opens undef', async () => {
 });
 
 test('does not open error', async () => {
+    const error = jest.spyOn(console, 'error');
     await s.start();
     const c = client();
     await c._connection;
@@ -390,6 +392,8 @@ test('does not open error', async () => {
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
 test('does not open with invalid code', async () => {
