@@ -322,20 +322,6 @@ test('receives result', async () => {
     expect(output).toBe(true);
 });
 
-test('opens', async () => {
-    await s.start();
-    const c = client();
-    await c._connection;
-    await open(c);
-    await c._disconnection;
-    await s.stop();
-    expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('true');
-    expect(s.body.channel).toBe(CHANNEL_KEY);
-    expect(s.body.future).toBe(FUTURE_KEY);
-});
-
 test('opens twice', async () => {
     await s.start();
     const c = client();
@@ -441,11 +427,12 @@ test('does not open with non-string code', async () => {
     expect(s.body.future).toBe(FUTURE_KEY);
 });
 
-test('closes', async () => {
+test('closes twice', async () => {
     await s.start();
     const c = client();
     await c._connection;
     await open(c);
+    await send(c, 'close');
     await send(c, 'close');
     await c._disconnection;
     await s.stop();
@@ -455,20 +442,6 @@ test('closes', async () => {
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
     expect(CHANNEL_KEY in c._channels).toBe(false);
-});
-
-test('does not close', async () => {
-    await s.start();
-    const c = client();
-    await c._connection;
-    await send(c, 'close');
-    await c._disconnection;
-    await s.stop();
-    expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('null');
-    expect(s.body.channel).toBe(CHANNEL_KEY);
-    expect(s.body.future).toBe(FUTURE_KEY);
 });
 
 test('echoes', async () => {
