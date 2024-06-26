@@ -74,8 +74,9 @@ test('calls', async () => {
     await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);
 });
 
-test('closes and does not call', async () => {
+test('closes, does not call, and does not close', async () => {
     c.close();
     expect(KEY in client._channels).toBe(false);
     await expect(c.call('name', 1, 2)).rejects.toThrow(StateError);
+    expect(() => c.close()).toThrow(StateError);
 });

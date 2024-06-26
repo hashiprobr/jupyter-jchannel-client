@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "webpack --mode production --devtool source-map",
-    "doc": "jsdoc src",
+    "doc": "jsdoc src jsdoc.md --configure jsdoc.json",
     "start": "webpack serve --mode development --devtool eval-source-map",
     "test": "jest"
   },

@@ -162,7 +162,6 @@ module.exports = {
         'jsdoc/no-blank-blocks': ['warn'],
         'jsdoc/no-defaults': ['warn'],
         'jsdoc/no-multi-asterisks': ['warn'],
-        'jsdoc/no-types': ['warn'],
         'jsdoc/no-undefined-types': ['warn'],
         'jsdoc/require-asterisk-prefix': ['warn'],
         'jsdoc/require-description': ['warn'],
