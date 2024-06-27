@@ -23,6 +23,7 @@ afterEach(() => {
 
 test('instantiates', () => {
     expect(client._channels[KEY]).toBe(c);
+    expect(c.handler).toBeNull();
 });
 
 test('does not set non-object handler', () => {

@@ -45,15 +45,18 @@ export class Channel {
      *
      * @type {object}
      */
+    get handler() {
+        return this.#handler;
+    }
 
-    set handler(handler) {
-        if (typeof handler !== 'object') {
+    set handler(value) {
+        if (typeof value !== 'object') {
             throw new TypeError('Handler must be an object');
         }
-        if (handler === null) {
+        if (value === null) {
             throw new Error('Handler cannot be null');
         }
-        this.#handler = handler;
+        this.#handler = value;
     }
 
     _handleCall(name, args) {
