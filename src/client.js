@@ -170,7 +170,7 @@ export class Client {
         this._channels = {};
     }
 
-    async _send(bodyType, channelKey, input) {
+    async _send(bodyType, channelKey, input, producer, consumer) {
         const socket = await this._connection;
 
         if (socket.readyState !== WebSocket.OPEN) {

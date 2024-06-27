@@ -9,8 +9,8 @@ beforeEach(() => {
     client = {
         _channels: {},
 
-        async _send(bodyType, input, key) {  // eslint-disable-line require-await
-            return Promise.resolve([bodyType, key, input]);
+        async _send(bodyType, key, input, producer, consumer) {  // eslint-disable-line require-await
+            return Promise.resolve([bodyType, key, input, producer, consumer]);
         },
     };
 
@@ -66,12 +66,12 @@ test('does not handle call without handler method', () => {
 });
 
 test('echoes', async () => {
-    const output = ['echo', [1, 2], KEY];
+    const output = ['echo', KEY, [1, 2], null, null];
     await expect(c.echo(1, 2)).resolves.toStrictEqual(output);
 });
 
 test('calls', async () => {
-    const output = ['call', { name: 'name', args: [1, 2] }, KEY];
+    const output = ['call', KEY, { name: 'name', args: [1, 2] }, null, null];
     await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);
 });
 

@@ -92,7 +92,7 @@ export class Channel {
      * @returns {Array} The same arguments as an array.
      */
     async echo(...args) {
-        return await this.#send('echo', args);
+        return await this.#send('echo', args, null, null);
     }
 
     /**
@@ -103,15 +103,15 @@ export class Channel {
      * @returns {any} The return value of the method.
      */
     async call(name, ...args) {
-        return await this.#send('call', { name, args });
+        return await this.#send('call', { name, args }, null, null);
     }
 
-    async #send(bodyType, input) {
+    async #send(bodyType, input, producer, consumer) {
         if (this.#client === null) {
             throw new StateError('Channel is closed');
         }
 
-        const future = await this.#client._send(bodyType, this.#key, input);
+        const future = await this.#client._send(bodyType, this.#key, input, producer, consumer);
 
         return await future;
     }

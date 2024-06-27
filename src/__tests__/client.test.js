@@ -71,8 +71,8 @@ function client() {
     return new Client('http://localhost:8889');
 }
 
-async function send(c, bodyType, input = null) {
-    await c._send(bodyType, CHANNEL_KEY, input);
+async function send(c, bodyType, input = null, producer = null, consumer = null) {
+    await c._send(bodyType, CHANNEL_KEY, input, producer, consumer);
 }
 
 async function open(c, code = '() => true') {
