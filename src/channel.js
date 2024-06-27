@@ -111,7 +111,7 @@ export class Channel {
             throw new StateError('Channel is closed');
         }
 
-        const future = await this.#client._send(bodyType, input, this.#key);
+        const future = await this.#client._send(bodyType, this.#key, input);
 
         return await future;
     }
