@@ -52,7 +52,7 @@ export class Client {
                                 } else {
                                     if (typeof input === 'string') {
                                         try {
-                                            const method = window.eval(input);
+                                            const method = self.eval(input);
 
                                             if (typeof method === 'function') {
                                                 channel = new Channel(this, channelKey);
