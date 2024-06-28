@@ -1,6 +1,9 @@
 import { AbstractError } from './types';
 
 export class CancelledError extends AbstractError {
+    constructor(message) {
+        super(message, 'CancelledError');
+    }
 }
 
 export class Loop {
