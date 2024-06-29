@@ -106,12 +106,12 @@ export class Channel {
         return await this.#send('call', { name, args }, null);
     }
 
-    async #send(bodyType, input, chunks) {
+    async #send(bodyType, input, stream) {
         if (this.#client === null) {
             throw new StateError('Channel is closed');
         }
 
-        const future = await this.#client._send(bodyType, this.#key, input, chunks);
+        const future = await this.#client._send(bodyType, this.#key, input, stream);
 
         return await future;
     }
