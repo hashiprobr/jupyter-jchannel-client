@@ -9,8 +9,8 @@ beforeEach(() => {
     client = {
         _channels: {},
 
-        async _send(bodyType, key, input, producer) {  // eslint-disable-line require-await
-            return Promise.resolve([bodyType, key, input, producer]);
+        async _send(bodyType, key, input, chunks) {  // eslint-disable-line require-await
+            return Promise.resolve([bodyType, key, input, chunks]);
         },
     };
 
