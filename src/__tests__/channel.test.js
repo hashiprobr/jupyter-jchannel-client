@@ -38,31 +38,31 @@ test('does not set null handler', () => {
     }).toThrow(Error);
 });
 
-test('handles call with result', () => {
+test('handles with result', () => {
     c.handler = {
         name(a, b) {
             return a + b;
         },
     };
-    expect(c._handleCall('name', [1, 2])).toBe(3);
+    expect(c._handle('name', [1, 2])).toBe(3);
 });
 
-test('handles call with exception', () => {
+test('handles with exception', () => {
     c.handler = {
         name() {
             throw Error();
         },
     };
-    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
+    expect(() => c._handle('name', [1, 2])).toThrow(Error);
 });
 
-test('does not handle call without handler', () => {
-    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
+test('does not handle without handler', () => {
+    expect(() => c._handle('name', [1, 2])).toThrow(Error);
 });
 
-test('does not handle call without handler method', () => {
+test('does not handle without handler method', () => {
     c.handler = {};
-    expect(() => c._handleCall('name', [1, 2])).toThrow(Error);
+    expect(() => c._handle('name', [1, 2])).toThrow(Error);
 });
 
 test('echoes', async () => {

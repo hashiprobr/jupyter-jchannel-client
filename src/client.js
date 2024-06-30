@@ -27,6 +27,8 @@ export class Client {
                 let channel;
                 let input;
                 let output;
+                let name;
+                let args;
 
                 switch (bodyType) {
                     case 'exception':
@@ -100,7 +102,10 @@ export class Client {
                                                 bodyType = 'result';
                                                 break;
                                             case 'call':
-                                                output = channel._handleCall(input.name, input.args);
+                                                name = this.#pop(input, 'name');
+                                                args = this.#pop(input, 'args');
+
+                                                output = channel._handle(name, args);
                                                 if (output instanceof Promise) {
                                                     output = await output;
                                                 }
@@ -208,7 +213,7 @@ export class Client {
 
     #get(body, name) {
         if (!(name in body)) {
-            throw new Error(`Body must have ${name}`);
+            throw new Error(`Object must have ${name}`);
         }
         return body[name];
     }

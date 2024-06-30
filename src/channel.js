@@ -59,7 +59,7 @@ export class Channel {
         this.#handler = value;
     }
 
-    _handleCall(name, args) {
+    _handle(name, args) {
         const method = this.#method(name);
 
         return method(...args);

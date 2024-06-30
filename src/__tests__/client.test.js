@@ -31,7 +31,7 @@ function mockChannel(client, key) {
             delete client._channels[key];
         },
 
-        _handleCall(name, args) {
+        _handle(name, args) {
             if (name === 'error') {
                 throw new Error();
             }
