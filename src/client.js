@@ -105,6 +105,14 @@ export class Client {
                                                 name = this.#pop(input, 'name');
                                                 args = this.#pop(input, 'args');
 
+                                                if (typeof name !== 'string') {
+                                                    throw new TypeError('Name must be a string');
+                                                }
+
+                                                if (!(args instanceof Array)) {
+                                                    throw new TypeError('Args must be a list');
+                                                }
+
                                                 output = channel._handle(name, args);
                                                 if (output instanceof Promise) {
                                                     output = await output;

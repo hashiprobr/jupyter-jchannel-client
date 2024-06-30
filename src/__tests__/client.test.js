@@ -536,6 +536,60 @@ test('does not call error', async () => {
     expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
+test('does not call with empty input', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'call', {});
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
+});
+
+test('does not call with non-string name', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'call', { name: true, args: [1, 2] });
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(TypeError));
+});
+
+test('does not call with non-array args', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'call', { name: 'name', args: true });
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(TypeError));
+});
+
 test('receives unexpected body type', async () => {
     await s.start();
     const c = client();
