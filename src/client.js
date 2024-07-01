@@ -13,7 +13,7 @@ export class Client {
                 const messageType = typeof event.data;
 
                 if (messageType !== 'string') {
-                    throw new TypeError(`Unexpected message type ${messageType}`);
+                    throw new TypeError(`Unexpected socket message type ${messageType}`);
                 }
 
                 const body = JSON.parse(event.data);
@@ -126,11 +126,11 @@ export class Client {
                                                 bodyType = 'result';
                                                 break;
                                             default:
-                                                payload = `Unexpected body type ${bodyType}`;
+                                                payload = `Unexpected socket body type ${bodyType}`;
                                                 bodyType = 'exception';
                                         }
                                     } catch (error) {
-                                        console.error('Channel request exception', error);
+                                        console.error('Socket request exception', error);
 
                                         payload = String(error);
                                         bodyType = 'exception';
