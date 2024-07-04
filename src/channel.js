@@ -50,18 +50,16 @@ export class Channel {
     }
 
     set handler(value) {
-        if (typeof value !== 'object') {
-            throw new TypeError('Handler must be an object');
-        }
-        if (value === null) {
-            throw new Error('Handler cannot be null');
-        }
         this.#handler = value;
     }
 
     _handle(name, args) {
         if (this.#handler === null) {
             throw new Error('Channel does not have handler');
+        }
+
+        if (typeof this.#handler !== 'object') {
+            throw new TypeError('Handler must be an object');
         }
 
         const method = this.#handler[name];

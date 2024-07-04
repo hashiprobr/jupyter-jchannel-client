@@ -26,18 +26,6 @@ test('instantiates', () => {
     expect(c.handler).toBeNull();
 });
 
-test('does not set non-object handler', () => {
-    expect(() => {
-        c.handler = true;
-    }).toThrow(TypeError);
-});
-
-test('does not set null handler', () => {
-    expect(() => {
-        c.handler = null;
-    }).toThrow(Error);
-});
-
 test('handles with result', () => {
     c.handler = {
         name(a, b) {
@@ -57,6 +45,11 @@ test('handles with exception', () => {
 });
 
 test('does not handle without handler', () => {
+    expect(() => c._handle('name', [1, 2])).toThrow(Error);
+});
+
+test('does not handle with non-object handler', () => {
+    c.handler = true;
     expect(() => c._handle('name', [1, 2])).toThrow(Error);
 });
 
