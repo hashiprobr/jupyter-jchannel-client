@@ -22,6 +22,7 @@ jest.mock('../channel', () => {
 
 const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
+const STREAM_KEY = 789;
 
 let future, s;
 
@@ -98,6 +99,7 @@ beforeEach(() => {
                 const body = {
                     future: FUTURE_KEY,
                     channel: CHANNEL_KEY,
+                    stream: STREAM_KEY,
                     payload,
                 };
 
@@ -148,7 +150,9 @@ beforeEach(() => {
 
                         const body = JSON.parse(data);
 
-                        switch (body.type) {
+                        const bodyType = body.type;
+
+                        switch (bodyType) {
                             case 'closed':
                             case 'exception':
                             case 'result':
@@ -176,7 +180,7 @@ beforeEach(() => {
                                 write(0b10000001, encode('result', 'true'));
                                 break;
                             default:
-                                write(0b10000001, bytes);
+                                write(0b10000001, encode(bodyType, body.payload));
                         }
                     }
 

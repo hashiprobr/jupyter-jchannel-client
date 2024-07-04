@@ -20,6 +20,7 @@ export class Client {
 
                 const futureKey = this.#get(body, 'future');
                 const channelKey = this.#get(body, 'channel');
+                let stream = this.#pop(body, 'stream');
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
 
