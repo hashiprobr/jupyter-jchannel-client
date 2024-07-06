@@ -41,6 +41,14 @@ function mockChannel(client, key) {
             if (name === 'undef') {
                 return;
             }
+            if (name === 'octet') {
+                async function* generate() {
+                    for await (const chunk of args.at(-1).byLimit()) {
+                        yield chunk;
+                    }
+                }
+                return generate();
+            }
             if (name === 'plain') {
                 return this._consume(args);
             }
@@ -203,6 +211,9 @@ beforeEach(() => {
                         switch (bodyType) {
                             case 'get-empty':
                                 write(0b10000001, encode('result', null, 0));
+                                break;
+                            case 'get-octet':
+                                handleCall('octet');
                                 break;
                             case 'get-plain':
                                 handleCall('plain');
@@ -753,6 +764,22 @@ test('does plain get', async () => {
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
     expect(s.body.payload).toBe('[1,2]');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does octet get', async () => {
+    s.shield += 1;
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'get-octet');
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('{}');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
