@@ -1,6 +1,6 @@
 import loop from './loop';
 
-import { KernelError, StateError } from './types';
+import { MetaGenerator, KernelError, StateError } from './types';
 import { Registry } from './registry';
 import { Channel } from './channel';
 
@@ -20,9 +20,17 @@ export class Client {
 
                 const futureKey = this.#get(body, 'future');
                 const channelKey = this.#get(body, 'channel');
-                let stream = this.#pop(body, 'stream');
+                const streamKey = this.#pop(body, 'stream');
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
+
+                let chunks;
+
+                if (streamKey === null) {
+                    chunks = null;
+                } else {
+                    chunks = await this.#doGet(url, streamKey);
+                }
 
                 let future;
                 let channel;
@@ -37,10 +45,15 @@ export class Client {
                         future.setException(new KernelError(payload));
                         break;
                     case 'result':
-                        output = JSON.parse(payload);
-
                         future = this._registry.retrieve(futureKey);
-                        future.setResult(output);
+
+                        if (chunks === null) {
+                            output = JSON.parse(payload);
+
+                            future.setResult(output);
+                        } else {
+                            future.setResult(chunks);
+                        }
                         break;
                     default:
                         input = JSON.parse(payload);
@@ -212,6 +225,19 @@ export class Client {
         const data = JSON.stringify(body);
 
         socket.send(data);
+    }
+
+    async #doGet(url, streamKey) {
+        const headers = { 'x-jchannel-stream': String(streamKey) };
+
+        const response = await fetch(url, { headers });
+        const status = response.status;
+
+        if (status === 200) {
+            return new MetaGenerator(response.body);
+        }
+
+        throw new Error(`Unexpected get response status ${status}`);
     }
 
     #pop(body, name) {

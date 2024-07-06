@@ -24,7 +24,7 @@ const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
 const STREAM_KEY = 789;
 
-let future, s;
+let event, future, s;
 
 function mockChannel(client, key) {
     const channel = {
@@ -86,22 +86,32 @@ beforeEach(() => {
         setException: jest.fn(),
     };
 
+    event = new Promise((resolve) => {
+        future.setResult.mockImplementation(() => {
+            resolve();
+        });
+    });
+
     s = http.createServer();
 
     s.beating = false;
     s.body = null;
+    s.status = null;
+    s.gotten = null;
+    s.posted = null;
 
     s.session = new Promise((resolve) => {
         const encoder = new TextEncoder();
 
         s.on('upgrade', (request, socket) => {
-            function encode(bodyType, payload) {
+            function encode(bodyType, payload, streamKey) {
                 const body = {
                     future: FUTURE_KEY,
                     channel: CHANNEL_KEY,
-                    stream: STREAM_KEY,
                     payload,
                 };
+
+                body.stream = streamKey;
 
                 body.type = bodyType;
 
@@ -153,6 +163,9 @@ beforeEach(() => {
                         const bodyType = body.type;
 
                         switch (bodyType) {
+                            case 'get-result':
+                                write(0b10000001, encode('result', null, STREAM_KEY));
+                                break;
                             case 'closed':
                             case 'exception':
                             case 'result':
@@ -174,18 +187,23 @@ beforeEach(() => {
                                 socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
                                 break;
                             case 'mock-exception':
-                                write(0b10000001, encode('exception', 'message'));
+                                write(0b10000001, encode('exception', 'message', null));
                                 break;
                             case 'mock-result':
-                                write(0b10000001, encode('result', 'true'));
+                                write(0b10000001, encode('result', 'true', null));
                                 break;
                             default:
-                                write(0b10000001, encode(bodyType, body.payload));
+                                write(0b10000001, encode(bodyType, body.payload, null));
                         }
                     }
 
                     chunk = chunk.subarray(end);
                 }
+            });
+
+            s.on('request', (request, response) => {
+                response.writeHead(200);
+                response.end();
             });
 
             socket.write([
@@ -607,4 +625,24 @@ test('receives unexpected body type', async () => {
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does result get', async () => {
+    await s.start();
+    const c = client();
+    await c._connection;
+    await send(c, 'get-result');
+
+    await event;
+
+    const [args] = future.setResult.mock.calls;
+    const [chunks] = args;
+
+    for await (const chunk of chunks) {
+        console.log(chunk);
+    }
+
+    await send(c, 'socket-close');
+    await c._disconnection;
+    await s.stop();
 });
