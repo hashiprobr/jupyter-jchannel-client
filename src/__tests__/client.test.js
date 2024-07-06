@@ -41,10 +41,20 @@ function mockChannel(client, key) {
             if (name === 'undef') {
                 return;
             }
+            if (name === 'plain') {
+                return this._consume(args);
+            }
             if (name === 'async') {
                 return this._resolve(args);
             }
             return args;
+        },
+
+        async _consume(args) {
+            for await (const chunk of args.at(-1).bySeparator()) {
+                console.debug(chunk);
+            }
+            return args.slice(0, -1);
         },
 
         async _resolve(args) {  // eslint-disable-line require-await
@@ -142,7 +152,14 @@ beforeEach(() => {
 
             function handleGet(bodyType, payload, stream) {
                 s.stream = stream;
+
                 write(0b10000001, encode(bodyType, payload, STREAM_KEY));
+            }
+
+            function handleCall(name) {
+                const payload = `{"name":"${name}","args":[1,2]}`;
+
+                handleGet('call', payload, generate());
             }
 
             const key = request.headers['sec-websocket-key'];
@@ -186,6 +203,9 @@ beforeEach(() => {
                         switch (bodyType) {
                             case 'get-empty':
                                 write(0b10000001, encode('result', null, 0));
+                                break;
+                            case 'get-plain':
+                                handleCall('plain');
                                 break;
                             case 'get-unexpected':
                                 handleGet('type', 'null', generatePartial());
@@ -717,6 +737,22 @@ test('does unexpected get', async () => {
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('exception');
     expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does plain get', async () => {
+    s.shield += 1;
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'get-plain');
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('[1,2]');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });

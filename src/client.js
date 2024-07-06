@@ -127,6 +127,10 @@ export class Client {
                                                     throw new TypeError('Args must be a list');
                                                 }
 
+                                                if (chunks !== null) {
+                                                    args.push(chunks);
+                                                }
+
                                                 output = channel._handle(name, args);
                                                 if (output instanceof Promise) {
                                                     output = await output;
