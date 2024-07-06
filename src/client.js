@@ -34,10 +34,15 @@ export class Client {
 
                 let future;
                 let channel;
+
                 let input;
                 let output;
+
                 let name;
                 let args;
+
+                let aiter;
+                let stream;
 
                 switch (bodyType) {
                     case 'exception':
@@ -136,9 +141,15 @@ export class Client {
                                                     output = await output;
                                                 }
 
-                                                payload = JSON.stringify(output);
-                                                if (typeof payload === 'undefined') {
+                                                try {
+                                                    aiter = output[Symbol.asyncIterator];
+                                                    stream = aiter();
                                                     payload = 'null';
+                                                } catch (error) {
+                                                    payload = JSON.stringify(output);
+                                                    if (typeof payload === 'undefined') {
+                                                        payload = 'null';
+                                                    }
                                                 }
 
                                                 bodyType = 'result';
