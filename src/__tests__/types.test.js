@@ -9,19 +9,19 @@ function createChunks(content) {
         getReader() {
             return {
                 read() {
-                    let chunk;
+                    let value;
                     let done;
 
                     if (content.length) {
                         const data = content.pop();
 
-                        chunk = encoder.encode(data);
+                        value = encoder.encode(data);
                         done = false;
                     } else {
                         done = true;
                     }
 
-                    return { chunk, done };
+                    return { value, done };
                 },
             };
         },

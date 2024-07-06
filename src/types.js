@@ -55,8 +55,23 @@ export class MetaGenerator {
                 break;
             }
 
-            yield result.chunk;
+            yield result.value;
         }
+    }
+
+    /**
+     * Convenience method that joins all chunks into one.
+     *
+     * @returns {Uint8Array} The joined stream chunks.
+     */
+    async join() {
+        const buffer = [];
+
+        for await (const chunk of this) {
+            buffer.push(...chunk);
+        }
+
+        return new Uint8Array(buffer);
     }
 
     /**
@@ -85,7 +100,7 @@ export class MetaGenerator {
                 break;
             }
 
-            let chunk = result.chunk;
+            let chunk = result.value;
             let length = chunk.length;
 
             let begin = 0;
@@ -144,7 +159,7 @@ export class MetaGenerator {
                 break;
             }
 
-            const chunk = result.chunk;
+            const chunk = result.value;
             const length = chunk.length;
 
             const newSize = size + length;

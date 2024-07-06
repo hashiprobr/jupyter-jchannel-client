@@ -24,6 +24,8 @@ const FUTURE_KEY = 123;
 const CHANNEL_KEY = 456;
 const STREAM_KEY = 789;
 
+const CONTENT_LENGTH = 1024;
+
 let event, future, s;
 
 function mockChannel(client, key) {
@@ -96,8 +98,8 @@ beforeEach(() => {
 
     s.beating = false;
     s.body = null;
-    s.status = null;
-    s.gotten = null;
+    s.stream = null;
+    s.gotten = [];
     s.posted = null;
 
     s.session = new Promise((resolve) => {
@@ -122,6 +124,24 @@ beforeEach(() => {
 
             function write(byte, bytes) {
                 socket.write(new Uint8Array([byte, bytes.length, ...bytes]));
+            }
+
+            async function* generate() {
+                for (let i = 0; i < CONTENT_LENGTH; i++) {
+                    const b = encoder.encode(String(i));
+                    s.gotten.push(...b);
+                    yield b;
+                }
+            }
+
+            async function* generatePartial() {
+                yield encoder.encode('chunk');
+                throw new Error();
+            }
+
+            function handleGet(bodyType, payload, stream) {
+                s.stream = stream;
+                write(0b10000001, encode(bodyType, payload, STREAM_KEY));
             }
 
             const key = request.headers['sec-websocket-key'];
@@ -164,7 +184,7 @@ beforeEach(() => {
 
                         switch (bodyType) {
                             case 'get-result':
-                                write(0b10000001, encode('result', null, STREAM_KEY));
+                                handleGet('result', null, generate());
                                 break;
                             case 'closed':
                             case 'exception':
@@ -201,8 +221,19 @@ beforeEach(() => {
                 }
             });
 
-            s.on('request', (request, response) => {
-                response.writeHead(200);
+            s.on('request', async (request, response) => {
+                const streamKey = request.headers['x-jchannel-stream'];
+
+                if (streamKey) {
+                    response.statusCode = 200;
+
+                    for await (const chunk of s.stream) {
+                        response.write(chunk);
+                    }
+                } else {
+                    response.statusCode = 400;
+                }
+
                 response.end();
             });
 
@@ -638,11 +669,11 @@ test('does result get', async () => {
     const [args] = future.setResult.mock.calls;
     const [chunks] = args;
 
-    for await (const chunk of chunks) {
-        console.log(chunk);
-    }
+    const content = await chunks.join();
 
     await send(c, 'socket-close');
     await c._disconnection;
     await s.stop();
+
+    expect(content).toStrictEqual(new Uint8Array(s.gotten));
 });
