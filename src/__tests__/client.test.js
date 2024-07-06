@@ -98,6 +98,7 @@ beforeEach(() => {
 
     s.beating = false;
     s.body = null;
+    s.shield = 0;
     s.stream = null;
     s.gotten = [];
     s.posted = null;
@@ -183,13 +184,24 @@ beforeEach(() => {
                         const bodyType = body.type;
 
                         switch (bodyType) {
+                            case 'get-empty':
+                                write(0b10000001, encode('result', null, 0));
+                                break;
+                            case 'get-unexpected':
+                                handleGet('type', 'null', generatePartial());
+                                break;
                             case 'get-result':
                                 handleGet('result', null, generate());
                                 break;
                             case 'closed':
                             case 'exception':
                             case 'result':
-                                s.body = body;
+                                if (s.shield) {
+                                    s.shield--;
+                                    break;
+                                } else {
+                                    s.body = body;
+                                }
                             case 'socket-close':
                                 socket.write(new Uint8Array([0b10001000, 0]));
                                 running = false;
@@ -222,13 +234,17 @@ beforeEach(() => {
             });
 
             s.on('request', async (request, response) => {
-                const streamKey = request.headers['x-jchannel-stream'];
+                const streamKey = Number(request.headers['x-jchannel-stream']);
 
-                if (streamKey) {
+                if (streamKey === STREAM_KEY) {
                     response.statusCode = 200;
 
-                    for await (const chunk of s.stream) {
-                        response.write(chunk);
+                    try {
+                        for await (const chunk of s.stream) {
+                            response.write(chunk);
+                        }
+                    } catch (error) {
+                        console.debug(error);
                     }
                 } else {
                     response.statusCode = 400;
@@ -376,6 +392,7 @@ test('receives result', async () => {
 });
 
 test('opens twice', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -481,6 +498,7 @@ test('does not open with non-string code', async () => {
 });
 
 test('closes twice', async () => {
+    s.shield += 2;
     await s.start();
     const c = client();
     await c._connection;
@@ -498,6 +516,7 @@ test('closes twice', async () => {
 });
 
 test('echoes', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -527,6 +546,7 @@ test('does not echo', async () => {
 });
 
 test('calls', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -542,6 +562,7 @@ test('calls', async () => {
 });
 
 test('calls async', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -557,6 +578,7 @@ test('calls async', async () => {
 });
 
 test('calls undef', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -573,6 +595,7 @@ test('calls undef', async () => {
 
 test('does not call error', async () => {
     const error = jest.spyOn(console, 'error');
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -591,6 +614,7 @@ test('does not call error', async () => {
 
 test('does not call with empty input', async () => {
     const error = jest.spyOn(console, 'error');
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -609,6 +633,7 @@ test('does not call with empty input', async () => {
 
 test('does not call with non-string name', async () => {
     const error = jest.spyOn(console, 'error');
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -627,6 +652,7 @@ test('does not call with non-string name', async () => {
 
 test('does not call with non-array args', async () => {
     const error = jest.spyOn(console, 'error');
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -644,6 +670,7 @@ test('does not call with non-array args', async () => {
 });
 
 test('receives unexpected body type', async () => {
+    s.shield += 1;
     await s.start();
     const c = client();
     await c._connection;
@@ -676,4 +703,32 @@ test('does result get', async () => {
     await s.stop();
 
     expect(content).toStrictEqual(new Uint8Array(s.gotten));
+});
+
+test('does unexpected get', async () => {
+    s.shield += 1;
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'get-unexpected');
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+});
+
+test('does not do empty get', async () => {
+    const error = jest.spyOn(console, 'error');
+    await s.start();
+    const c = client();
+    await c._connection;
+    await send(c, 'get-empty');
+    await c._disconnection;
+    await s.stop();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
