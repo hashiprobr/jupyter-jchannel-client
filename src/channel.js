@@ -84,7 +84,7 @@ export class Channel {
      * @returns {Array} The same arguments as an array.
      */
     async echo(...args) {
-        return await this.#send('echo', args, null);
+        return await this.#send('echo', args);
     }
 
     /**
@@ -95,7 +95,7 @@ export class Channel {
      * @returns {any} The return value of the method.
      */
     async call(name, ...args) {
-        return await this.#send('call', { name, args }, null);
+        return await this.#send('call', { name, args });
     }
 
     async #send(bodyType, input, stream) {

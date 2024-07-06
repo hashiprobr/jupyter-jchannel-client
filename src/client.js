@@ -173,7 +173,7 @@ export class Client {
 
                         body.payload = payload;
 
-                        this.#accept(socket, bodyType, body);
+                        this.#accept(socket, bodyType, body, stream);
                 }
             } catch (error) {
                 console.error('Socket message exception', error);
@@ -229,12 +229,12 @@ export class Client {
             payload,
         };
 
-        this.#accept(socket, bodyType, body);
+        this.#accept(socket, bodyType, body, stream);
 
         return future;
     }
 
-    #accept(socket, bodyType, body) {
+    #accept(socket, bodyType, body, stream) {
         body.type = bodyType;
 
         const data = JSON.stringify(body);

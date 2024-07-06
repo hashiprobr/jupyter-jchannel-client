@@ -59,12 +59,12 @@ test('does not handle without handler method', () => {
 });
 
 test('echoes', async () => {
-    const output = ['echo', KEY, [1, 2], null];
+    const output = ['echo', KEY, [1, 2], undefined];
     await expect(c.echo(1, 2)).resolves.toStrictEqual(output);
 });
 
 test('calls', async () => {
-    const output = ['call', KEY, { name: 'name', args: [1, 2] }, null];
+    const output = ['call', KEY, { name: 'name', args: [1, 2] }, undefined];
     await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);
 });
 
