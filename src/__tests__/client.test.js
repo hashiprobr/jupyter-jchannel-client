@@ -94,7 +94,7 @@ function client() {
     return new Client('http://localhost:8889');
 }
 
-async function send(c, bodyType, input = null, stream = null) {
+async function send(c, bodyType, input = null, stream = undefined) {
     await c._send(bodyType, CHANNEL_KEY, input, stream);
 }
 
@@ -347,6 +347,13 @@ beforeEach(() => {
 
 afterEach(() => {
     jest.restoreAllMocks();
+});
+
+test('does not send with invalid stream', async () => {
+    const c = client();
+    await expect(c._connection).rejects.toThrow(StateError);
+    await expect(send(c, 'closed', null, true)).rejects.toThrow(TypeError);
+    await c._disconnection;
 });
 
 test('does not connect and does not send', async () => {

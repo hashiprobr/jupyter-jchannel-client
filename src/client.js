@@ -221,6 +221,12 @@ export class Client {
     }
 
     async _send(bodyType, channelKey, input, stream) {
+        if (stream) {
+            if (!this.#aiter(stream)) {
+                throw new TypeError('Stream must be an async iterable');
+            }
+        }
+
         const socket = await this._connection;
 
         if (socket.readyState !== WebSocket.OPEN) {
