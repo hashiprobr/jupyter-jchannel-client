@@ -226,6 +226,9 @@ beforeEach(() => {
                             case 'get-unexpected':
                                 handleGet('type', 'null', generatePartial());
                                 break;
+                            case 'get-pipe':
+                                handleGet('pipe', 'null', generate());
+                                break;
                             case 'get-result':
                                 handleGet('result', null, generate());
                                 break;
@@ -754,6 +757,24 @@ test('does result get', async () => {
     await s.stop();
 
     expect(content).toStrictEqual(new Uint8Array(s.gotten));
+});
+
+test('does pipe get', async () => {
+    s.shield += 1;
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'get-pipe');
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+
+    expect(s.posted).toStrictEqual(s.gotten);
 });
 
 test('does unexpected get', async () => {

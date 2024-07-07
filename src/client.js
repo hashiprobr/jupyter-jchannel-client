@@ -153,6 +153,11 @@ export class Client {
 
                                                 bodyType = 'result';
                                                 break;
+                                            case 'pipe':
+                                                stream = chunks;
+                                                payload = 'null';
+                                                bodyType = 'result';
+                                                break;
                                             default:
                                                 payload = `Unexpected socket body type ${bodyType}`;
                                                 bodyType = 'exception';

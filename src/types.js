@@ -47,6 +47,10 @@ export class MetaGenerator {
         this.#reader = stream.getReader();
     }
 
+    next() {
+        return this.#reader.read();
+    }
+
     async *[Symbol.asyncIterator]() {
         while (true) {
             const result = await this.#reader.read();
