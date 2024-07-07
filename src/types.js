@@ -47,20 +47,12 @@ export class MetaGenerator {
         this.#reader = stream.getReader();
     }
 
-    next() {
-        return this.#reader.read();
+    [Symbol.asyncIterator]() {
+        return this;
     }
 
-    async *[Symbol.asyncIterator]() {
-        while (true) {
-            const result = await this.#reader.read();
-
-            if (result.done) {
-                break;
-            }
-
-            yield result.value;
-        }
+    next() {
+        return this.#reader.read();
     }
 
     /**
