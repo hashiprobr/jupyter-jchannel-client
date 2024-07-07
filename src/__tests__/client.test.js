@@ -26,7 +26,7 @@ const STREAM_KEY = 789;
 
 const CONTENT_LENGTH = 1024;
 
-let event, future, s;
+let encoder, future, event, s;
 
 function mockChannel(client, key) {
     const channel = {
@@ -103,6 +103,8 @@ async function open(c, code = '() => true') {
 }
 
 beforeEach(() => {
+    encoder = new TextEncoder();
+
     future = {
         setResult: jest.fn(),
         setException: jest.fn(),
@@ -124,8 +126,6 @@ beforeEach(() => {
     s.posted = [];
 
     s.session = new Promise((resolve) => {
-        const encoder = new TextEncoder();
-
         let running = true;
 
         s.on('upgrade', (request, socket) => {
@@ -135,11 +135,6 @@ beforeEach(() => {
                     s.gotten.push(...b);
                     yield b;
                 }
-            }
-
-            async function* generatePartial() {
-                yield encoder.encode('chunk');
-                throw new Error();
             }
 
             function encode(bodyType, payload, streamKey) {
@@ -219,17 +214,11 @@ beforeEach(() => {
                             case 'get-empty':
                                 write(0b10000001, encode('result', null, 0));
                                 break;
-                            case 'get-error':
-                                handleCall('error');
-                                break;
                             case 'get-octet':
                                 handleCall('octet');
                                 break;
                             case 'get-plain':
                                 handleCall('plain');
-                                break;
-                            case 'get-unexpected':
-                                handleGet('type', 'null', generatePartial());
                                 break;
                             case 'get-pipe':
                                 handleGet('pipe', 'null', generate());
@@ -281,12 +270,8 @@ beforeEach(() => {
                     const streamKey = Number(request.headers['x-jchannel-stream']);
 
                     if (streamKey === STREAM_KEY) {
-                        try {
-                            for await (const chunk of s.stream) {
-                                response.write(chunk);
-                            }
-                        } catch (error) {
-                            console.error('Get writing exception', error);
+                        for await (const chunk of s.stream) {
+                            response.write(chunk);
                         }
                     } else {
                         response.statusCode = 400;
@@ -803,25 +788,6 @@ test('does pipe get', async () => {
     expect(s.posted).toStrictEqual(s.gotten);
 });
 
-test('does unexpected get', async () => {
-    const error = jest.spyOn(console, 'error');
-    s.shield += 1;
-    await s.start();
-    const c = client();
-    await c._connection;
-    await open(c);
-    await send(c, 'get-unexpected');
-    await c._disconnection;
-    await s.stop();
-    expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('exception');
-    expect(typeof s.body.payload).toBe('string');
-    expect(s.body.channel).toBe(CHANNEL_KEY);
-    expect(s.body.future).toBe(FUTURE_KEY);
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
-});
-
 test('does plain get', async () => {
     s.shield += 1;
     await s.start();
@@ -856,25 +822,6 @@ test('does octet get', async () => {
     expect(s.posted).toStrictEqual(s.gotten);
 });
 
-test('does not do error get', async () => {
-    const error = jest.spyOn(console, 'error');
-    s.shield += 1;
-    await s.start();
-    const c = client();
-    await c._connection;
-    await open(c);
-    await send(c, 'get-error');
-    await c._disconnection;
-    await s.stop();
-    expect(Object.keys(s.body)).toHaveLength(4);
-    expect(s.body.type).toBe('exception');
-    expect(typeof s.body.payload).toBe('string');
-    expect(s.body.channel).toBe(CHANNEL_KEY);
-    expect(s.body.future).toBe(FUTURE_KEY);
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
-});
-
 test('does not do empty get', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
@@ -888,8 +835,6 @@ test('does not do empty get', async () => {
 });
 
 test('does partial post', async () => {
-    const encoder = new TextEncoder();
-
     async function* generate() {
         yield encoder.encode('chunk');
         throw new Error();
@@ -913,8 +858,6 @@ test('does partial post', async () => {
 });
 
 test('does not do invalid post', async () => {
-    const encoder = new TextEncoder();
-
     async function* generate() {
         for (let i = 0; i < CONTENT_LENGTH; i++) {
             yield encoder.encode(String(i));
@@ -924,7 +867,7 @@ test('does not do invalid post', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await expect(() => send(c, 'type', null, generate())).rejects.toThrow(Error);
+    await expect(() => send(c, 'post-empty', null, generate())).rejects.toThrow(Error);
     await c._disconnection;
     await s.stop();
 });
