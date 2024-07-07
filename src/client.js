@@ -265,12 +265,16 @@ export class Client {
             type: 'bytes',
 
             async pull(controller) {
-                const result = await stream.next();
+                try {
+                    const result = await stream.next();
 
-                if (result.done) {
-                    controller.close();
-                } else {
-                    controller.enqueue(result.value);
+                    if (result.done) {
+                        controller.close();
+                    } else {
+                        controller.enqueue(result.value);
+                    }
+                } catch (error) {
+                    controller.error(error);
                 }
             },
         });

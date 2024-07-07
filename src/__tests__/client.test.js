@@ -802,6 +802,8 @@ test('does octet get', async () => {
     expect(s.body.payload).toBe('null');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+
+    expect(s.posted).toStrictEqual(s.gotten);
 });
 
 test('does not do empty get', async () => {
