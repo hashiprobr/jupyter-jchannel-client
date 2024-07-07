@@ -28,21 +28,18 @@ export class Client {
                 let payload = this.#pop(body, 'payload');
                 let bodyType = this.#pop(body, 'type');
 
-                let chunks;
-
-                if (streamKey === null) {
-                    chunks = null;
-                } else {
-                    chunks = await this.#doGet(streamKey);
-                }
-
                 let future;
                 let channel;
                 let input;
                 let output;
+                let chunks;
                 let stream;
                 let name;
                 let args;
+
+                if (streamKey !== null) {
+                    chunks = await this.#doGet(streamKey);
+                }
 
                 switch (bodyType) {
                     case 'exception':
@@ -52,12 +49,12 @@ export class Client {
                     case 'result':
                         future = this._registry.retrieve(futureKey);
 
-                        if (chunks === null) {
+                        if (chunks) {
+                            future.setResult(chunks);
+                        } else {
                             output = JSON.parse(payload);
 
                             future.setResult(output);
-                        } else {
-                            future.setResult(chunks);
                         }
                         break;
                     default:
@@ -132,7 +129,7 @@ export class Client {
                                                     throw new TypeError('Args must be a list');
                                                 }
 
-                                                if (chunks !== null) {
+                                                if (chunks) {
                                                     args.push(chunks);
                                                 }
 

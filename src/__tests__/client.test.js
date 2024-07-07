@@ -217,6 +217,9 @@ beforeEach(() => {
                             case 'get-empty':
                                 write(0b10000001, encode('result', null, 0));
                                 break;
+                            case 'get-error':
+                                handleCall('error');
+                                break;
                             case 'get-octet':
                                 handleCall('octet');
                                 break;
@@ -825,6 +828,25 @@ test('does octet get', async () => {
     expect(s.body.future).toBe(FUTURE_KEY);
 
     expect(s.posted).toStrictEqual(s.gotten);
+});
+
+test('does not do error get', async () => {
+    const error = jest.spyOn(console, 'error');
+    s.shield += 1;
+    await s.start();
+    const c = client();
+    await c._connection;
+    await open(c);
+    await send(c, 'get-error');
+    await c._disconnection;
+    await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('exception');
+    expect(typeof s.body.payload).toBe('string');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
 test('does not do empty get', async () => {
