@@ -138,7 +138,7 @@ export class Client {
                                                     output = await output;
                                                 }
 
-                                                if (this.#aiter(output)) {
+                                                if (output && this.#aiter(output)) {
                                                     stream = output;
                                                     payload = 'null';
                                                 } else {
@@ -311,9 +311,6 @@ export class Client {
 
     #aiter(value) {
         if (typeof value !== 'object') {
-            return false;
-        }
-        if (value === null) {
             return false;
         }
         return Symbol.asyncIterator in value;

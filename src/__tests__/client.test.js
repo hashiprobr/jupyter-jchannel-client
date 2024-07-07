@@ -162,9 +162,9 @@ beforeEach(() => {
             }
 
             function close() {
-                socket.write(new Uint8Array([0b10001000, 0]));
-
                 running = false;
+
+                socket.write(new Uint8Array([0b10001000, 0]));
             }
 
             function handleGet(bodyType, payload, stream) {
@@ -294,17 +294,31 @@ beforeEach(() => {
                 } else {
                     const data = request.headers['x-jchannel-data'];
 
-                    s.body = JSON.parse(data);
+                    const body = JSON.parse(data);
 
-                    await new Promise((resolve) => {
-                        request.on('data', (chunk) => {
-                            s.posted.push(...chunk);
-                        });
+                    if (body.type === 'result') {
+                        s.body = body;
 
-                        request.on('end', () => {
-                            resolve();
-                        });
-                    });
+                        try {
+                            await new Promise((resolve, reject) => {
+                                request.on('data', (chunk) => {
+                                    s.posted.push(...chunk);
+                                });
+
+                                request.on('end', () => {
+                                    resolve();
+                                });
+
+                                request.on('error', (error) => {
+                                    reject(error);
+                                });
+                            });
+                        } catch (error) {
+                            response.statusCode = 400;
+                        }
+                    } else {
+                        response.statusCode = 400;
+                    }
 
                     close();
                 }
@@ -871,4 +885,46 @@ test('does not do empty get', async () => {
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
+});
+
+test('does partial post', async () => {
+    const encoder = new TextEncoder();
+
+    async function* generate() {
+        yield encoder.encode('chunk');
+        throw new Error();
+    }
+
+    await s.start();
+    const c = client();
+    await c._connection;
+    // NOTE: The exception thrown should be an instance
+    // of TypeError, but it is not recognized as such.
+    // Needs a generic assertion until the bug is fixed.
+    await expect(() => send(c, 'result', null, generate())).rejects.toThrow();
+    await c._disconnection;
+    // NOTE: This method should not be necessary because
+    // the WebSocket and the GET sockets are all supposed
+    // to be destroyed at this point. Needs investigation.
+    s.closeAllConnections();
+    await s.stop();
+
+    expect(s.posted).toStrictEqual([99, 104, 117, 110, 107]);
+});
+
+test('does not do invalid post', async () => {
+    const encoder = new TextEncoder();
+
+    async function* generate() {
+        for (let i = 0; i < CONTENT_LENGTH; i++) {
+            yield encoder.encode(String(i));
+        }
+    }
+
+    await s.start();
+    const c = client();
+    await c._connection;
+    await expect(() => send(c, 'type', null, generate())).rejects.toThrow(Error);
+    await c._disconnection;
+    await s.stop();
 });
