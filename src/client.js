@@ -141,11 +141,8 @@ export class Client {
                                                     output = await output;
                                                 }
 
-                                                if (typeof output === 'object' && output !== null) {
-                                                    stream = output[Symbol.asyncIterator];
-                                                }
-
-                                                if (stream) {
+                                                if (this.#aiter(output)) {
+                                                    stream = output;
                                                     payload = 'null';
                                                 } else {
                                                     payload = JSON.stringify(output);
@@ -262,18 +259,45 @@ export class Client {
     }
 
     async #doPost(data, stream) {
-        const method = 'POST';
-
         const headers = { 'x-jchannel-data': data };
 
-        const body = 'body';
+        const body = new ReadableStream({
+            type: 'bytes',
 
-        const response = await fetch(this.#url, { method, headers, body });
+            async pull(controller) {
+                const result = await stream.next();
+
+                if (result.done) {
+                    controller.close();
+                } else {
+                    controller.enqueue(result.value);
+                }
+            },
+        });
+
+        const init = {
+            method: 'POST',
+            duplex: 'half',
+            headers,
+            body,
+        };
+
+        const response = await fetch(this.#url, init);
         const status = response.status;
 
         if (status !== 200) {
             throw new Error(`Unexpected post response status ${status}`);
         }
+    }
+
+    #aiter(value) {
+        if (typeof value !== 'object') {
+            return false;
+        }
+        if (value === null) {
+            return false;
+        }
+        return Symbol.asyncIterator in value;
     }
 
     #pop(body, name) {
