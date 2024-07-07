@@ -119,32 +119,14 @@ beforeEach(() => {
     s.shield = 0;
     s.stream = null;
     s.gotten = [];
-    s.posted = null;
+    s.posted = [];
 
     s.session = new Promise((resolve) => {
         const encoder = new TextEncoder();
 
+        let running = true;
+
         s.on('upgrade', (request, socket) => {
-            function encode(bodyType, payload, streamKey) {
-                const body = {
-                    future: FUTURE_KEY,
-                    channel: CHANNEL_KEY,
-                    payload,
-                };
-
-                body.stream = streamKey;
-
-                body.type = bodyType;
-
-                const data = JSON.stringify(body);
-
-                return encoder.encode(data);
-            }
-
-            function write(byte, bytes) {
-                socket.write(new Uint8Array([byte, bytes.length, ...bytes]));
-            }
-
             async function* generate() {
                 for (let i = 0; i < CONTENT_LENGTH; i++) {
                     const b = encoder.encode(String(i));
@@ -156,6 +138,31 @@ beforeEach(() => {
             async function* generatePartial() {
                 yield encoder.encode('chunk');
                 throw new Error();
+            }
+
+            function encode(bodyType, payload, streamKey) {
+                const body = {
+                    future: FUTURE_KEY,
+                    channel: CHANNEL_KEY,
+                    payload,
+                };
+
+                body.stream = streamKey;
+                body.type = bodyType;
+
+                const data = JSON.stringify(body);
+
+                return encoder.encode(data);
+            }
+
+            function write(byte, bytes) {
+                socket.write(new Uint8Array([byte, bytes.length, ...bytes]));
+            }
+
+            function close() {
+                socket.write(new Uint8Array([0b10001000, 0]));
+
+                running = false;
             }
 
             function handleGet(bodyType, payload, stream) {
@@ -175,8 +182,6 @@ beforeEach(() => {
             const accept = crypto.createHash('sha1')
                 .update(`${key}${magic}`)
                 .digest('base64');
-
-            let running = true;
 
             socket.on('data', (chunk) => {
                 while (chunk.length > 0) {
@@ -234,8 +239,7 @@ beforeEach(() => {
                                     s.body = body;
                                 }
                             case 'socket-close':
-                                socket.write(new Uint8Array([0b10001000, 0]));
-                                running = false;
+                                close();
                                 break;
                             case 'socket-heart':
                                 socket.write(new Uint8Array([0b10001001, 0]));
@@ -265,20 +269,36 @@ beforeEach(() => {
             });
 
             s.on('request', async (request, response) => {
-                const streamKey = Number(request.headers['x-jchannel-stream']);
+                if (request.method === 'GET') {
+                    const streamKey = Number(request.headers['x-jchannel-stream']);
 
-                if (streamKey === STREAM_KEY) {
-                    response.statusCode = 200;
-
-                    try {
-                        for await (const chunk of s.stream) {
-                            response.write(chunk);
+                    if (streamKey === STREAM_KEY) {
+                        try {
+                            for await (const chunk of s.stream) {
+                                response.write(chunk);
+                            }
+                        } catch (error) {
+                            console.debug(error);
                         }
-                    } catch (error) {
-                        console.debug(error);
+                    } else {
+                        response.statusCode = 400;
                     }
                 } else {
-                    response.statusCode = 400;
+                    const data = request.headers['x-jchannel-data'];
+
+                    s.body = JSON.parse(data);
+
+                    await new Promise((resolve) => {
+                        request.on('data', (chunk) => {
+                            s.posted.push(...chunk);
+                        });
+
+                        request.on('end', () => {
+                            resolve();
+                        });
+                    });
+
+                    close();
                 }
 
                 response.end();

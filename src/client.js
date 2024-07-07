@@ -5,7 +5,11 @@ import { Registry } from './registry';
 import { Channel } from './channel';
 
 export class Client {
+    #url;
+
     constructor(url) {
+        this.#url = url;
+
         const socket = new WebSocket(`ws${url.slice(4)}/socket`);
 
         socket.addEventListener('message', async (event) => {
@@ -29,20 +33,16 @@ export class Client {
                 if (streamKey === null) {
                     chunks = null;
                 } else {
-                    chunks = await this.#doGet(url, streamKey);
+                    chunks = await this.#doGet(streamKey);
                 }
 
                 let future;
                 let channel;
-
                 let input;
                 let output;
-
+                let stream;
                 let name;
                 let args;
-
-                let aiter;
-                let stream;
 
                 switch (bodyType) {
                     case 'exception':
@@ -141,11 +141,13 @@ export class Client {
                                                     output = await output;
                                                 }
 
-                                                try {
-                                                    aiter = output[Symbol.asyncIterator];
-                                                    stream = aiter();
+                                                if (typeof output === 'object' && output !== null) {
+                                                    stream = output[Symbol.asyncIterator];
+                                                }
+
+                                                if (stream) {
                                                     payload = 'null';
-                                                } catch (error) {
+                                                } else {
                                                     payload = JSON.stringify(output);
                                                     if (typeof payload === 'undefined') {
                                                         payload = 'null';
@@ -173,7 +175,7 @@ export class Client {
 
                         body.payload = payload;
 
-                        this.#accept(socket, bodyType, body, stream);
+                        await this.#accept(socket, bodyType, body, stream);
                 }
             } catch (error) {
                 console.error('Socket message exception', error);
@@ -229,30 +231,49 @@ export class Client {
             payload,
         };
 
-        this.#accept(socket, bodyType, body, stream);
+        await this.#accept(socket, bodyType, body, stream);
 
         return future;
     }
 
-    #accept(socket, bodyType, body, stream) {
+    async #accept(socket, bodyType, body, stream) {
         body.type = bodyType;
 
         const data = JSON.stringify(body);
 
-        socket.send(data);
+        if (stream) {
+            await this.#doPost(data, stream);
+        } else {
+            socket.send(data);
+        }
     }
 
-    async #doGet(url, streamKey) {
+    async #doGet(streamKey) {
         const headers = { 'x-jchannel-stream': String(streamKey) };
 
-        const response = await fetch(url, { headers });
+        const response = await fetch(this.#url, { headers });
         const status = response.status;
 
-        if (status === 200) {
-            return new MetaGenerator(response.body);
+        if (status !== 200) {
+            throw new Error(`Unexpected get response status ${status}`);
         }
 
-        throw new Error(`Unexpected get response status ${status}`);
+        return new MetaGenerator(response.body);
+    }
+
+    async #doPost(data, stream) {
+        const method = 'POST';
+
+        const headers = { 'x-jchannel-data': data };
+
+        const body = 'body';
+
+        const response = await fetch(this.#url, { method, headers, body });
+        const status = response.status;
+
+        if (status !== 200) {
+            throw new Error(`Unexpected post response status ${status}`);
+        }
     }
 
     #pop(body, name) {
