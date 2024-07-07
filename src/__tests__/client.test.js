@@ -59,10 +59,12 @@ function mockChannel(client, key) {
         },
 
         async _consume(args) {
+            let arg = 0;
             for await (const chunk of args.at(-1).bySeparator()) {
-                console.debug(chunk);
+                arg += chunk.length;
             }
-            return args.slice(0, -1);
+            args.splice(-1, 1, arg);
+            return args;
         },
 
         async _resolve(args) {  // eslint-disable-line require-await
@@ -284,7 +286,7 @@ beforeEach(() => {
                                 response.write(chunk);
                             }
                         } catch (error) {
-                            console.debug(error);
+                            console.error('Get writing exception', error);
                         }
                     } else {
                         response.statusCode = 400;
@@ -781,6 +783,7 @@ test('does pipe get', async () => {
 });
 
 test('does unexpected get', async () => {
+    const error = jest.spyOn(console, 'error');
     s.shield += 1;
     await s.start();
     const c = client();
@@ -794,6 +797,8 @@ test('does unexpected get', async () => {
     expect(typeof s.body.payload).toBe('string');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 });
 
 test('does plain get', async () => {
@@ -807,7 +812,7 @@ test('does plain get', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('[1,2]');
+    expect(s.body.payload).toBe('[1,2,2986]');
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
