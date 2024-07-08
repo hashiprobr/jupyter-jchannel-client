@@ -15,6 +15,7 @@
   "type": "module",
   "main": "src/index.js",
   "files": [
+    "src",
     "dist"
   ],
   "scripts": {
