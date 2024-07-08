@@ -129,14 +129,6 @@ beforeEach(() => {
         let running = true;
 
         s.on('upgrade', (request, socket) => {
-            async function* generate() {
-                for (let i = 0; i < CONTENT_LENGTH; i++) {
-                    const b = encoder.encode(String(i));
-                    s.gotten.push(...b);
-                    yield b;
-                }
-            }
-
             function encode(bodyType, payload, streamKey) {
                 const body = {
                     future: FUTURE_KEY,
@@ -172,6 +164,14 @@ beforeEach(() => {
                 const payload = `{"name":"${name}","args":[1,2]}`;
 
                 handleGet('call', payload, generate());
+            }
+
+            async function* generate() {
+                for (let i = 0; i < CONTENT_LENGTH; i++) {
+                    const b = encoder.encode(String(i));
+                    s.gotten.push(...b);
+                    yield b;
+                }
             }
 
             const key = request.headers['sec-websocket-key'];
@@ -211,8 +211,8 @@ beforeEach(() => {
                         const bodyType = body.type;
 
                         switch (bodyType) {
-                            case 'get-empty':
-                                write(0b10000001, encode('result', null, 0));
+                            case 'get-invalid':
+                                write(0b10000001, encode('type', 'null', 0));
                                 break;
                             case 'get-octet':
                                 handleCall('octet');
@@ -814,12 +814,12 @@ test('does octet get', async () => {
     expect(s.posted).toStrictEqual(s.gotten);
 });
 
-test('does not do empty get', async () => {
+test('does not do invalid get', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
     const c = client();
     await c._connection;
-    await send(c, 'get-empty');
+    await send(c, 'get-invalid');
     await c._disconnection;
     await s.stop();
     expect(error).toHaveBeenCalledTimes(1);
@@ -827,7 +827,7 @@ test('does not do empty get', async () => {
 });
 
 test('does partial post', async () => {
-    async function* generate() {
+    async function* generatePartial() {
         yield encoder.encode('chunk');
         throw new Error();
     }
@@ -836,7 +836,7 @@ test('does partial post', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await send(c, 'result', null, generate());
+    await send(c, 'result', null, generatePartial());
     await c._disconnection;
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
@@ -860,7 +860,7 @@ test('does not do invalid post', async () => {
     await s.start();
     const c = client();
     await c._connection;
-    await expect(() => send(c, 'post-empty', null, generate())).rejects.toThrow(Error);
+    await expect(() => send(c, 'post-invalid', null, generate())).rejects.toThrow(Error);
     await c._disconnection;
     await s.stop();
 });
