@@ -289,7 +289,9 @@ export class Client {
                         controller.enqueue(result.value);
                     }
                 } catch (error) {
-                    controller.error(error);
+                    console.error('Post writing exception', error);
+
+                    controller.close();
                 }
             },
         });

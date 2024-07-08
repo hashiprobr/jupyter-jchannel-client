@@ -284,23 +284,15 @@ beforeEach(() => {
                     if (body.type === 'result') {
                         s.body = body;
 
-                        try {
-                            await new Promise((resolve, reject) => {
-                                request.on('data', (chunk) => {
-                                    s.posted.push(...chunk);
-                                });
-
-                                request.on('end', () => {
-                                    resolve();
-                                });
-
-                                request.on('error', (error) => {
-                                    reject(error);
-                                });
+                        await new Promise((resolve) => {
+                            request.on('data', (chunk) => {
+                                s.posted.push(...chunk);
                             });
-                        } catch (error) {
-                            response.statusCode = 400;
-                        }
+
+                            request.on('end', () => {
+                                resolve();
+                            });
+                        });
                     } else {
                         response.statusCode = 400;
                     }
@@ -840,19 +832,20 @@ test('does partial post', async () => {
         throw new Error();
     }
 
+    const error = jest.spyOn(console, 'error');
     await s.start();
     const c = client();
     await c._connection;
-    // NOTE: The exception thrown should be an instance
-    // of TypeError, but it is not recognized as such.
-    // Needs a generic assertion until the bug is fixed.
-    await expect(() => send(c, 'result', null, generate())).rejects.toThrow();
+    await send(c, 'result', null, generate());
     await c._disconnection;
-    // NOTE: This method should not be necessary because
-    // the WebSocket and the GET sockets are all supposed
-    // to be destroyed at this point. Needs investigation.
-    s.closeAllConnections();
     await s.stop();
+    expect(Object.keys(s.body)).toHaveLength(4);
+    expect(s.body.type).toBe('result');
+    expect(s.body.payload).toBe('null');
+    expect(s.body.channel).toBe(CHANNEL_KEY);
+    expect(s.body.future).toBe(FUTURE_KEY);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
 
     expect(s.posted).toStrictEqual([99, 104, 117, 110, 107]);
 });
