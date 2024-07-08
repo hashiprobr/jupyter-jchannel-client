@@ -63,6 +63,12 @@ test('echoes', async () => {
     await expect(c.echo(1, 2)).resolves.toStrictEqual(output);
 });
 
+test('pipes', async () => {
+    const stream = {};
+    const output = ['pipe', KEY, null, stream];
+    await expect(c.pipe(stream)).resolves.toStrictEqual(output);
+});
+
 test('calls', async () => {
     const output = ['call', KEY, { name: 'name', args: [1, 2] }, undefined];
     await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);

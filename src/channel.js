@@ -88,6 +88,22 @@ export class Channel {
     }
 
     /**
+     * Sends a byte stream to the server and receives it back.
+     *
+     * Under normal circumstances, this method should not be called. It should
+     * only be called for debugging or testing purposes.
+     *
+     * It is particularly useful to verify whether the bytes are robust to GET
+     * and POST streaming.
+     *
+     * @param {object} stream An async iterable of Uint8Array instances.
+     * @returns {MetaGenerator} The same bytes as a meta generator.
+     */
+    async pipe(stream) {
+        return await this.#send('pipe', null, stream);
+    }
+
+    /**
      * Makes a call to the server.
      *
      * @param {string} name The name of a server handler method.
@@ -95,7 +111,7 @@ export class Channel {
      * @returns {any} The return value of the method.
      */
     async call(name, ...args) {
-        return await this.#send('call', { name, args });
+        return await this.#send('call', { name, args }, undefined);
     }
 
     async #send(bodyType, input, stream) {
