@@ -133,7 +133,8 @@ export class MetaGenerator {
     /**
      * Provides chunks according to a separator.
      *
-     * @param {string|Uint8Array} [separator = '\n'] The split separator.
+     * @param {string|Uint8Array} [separator = '\n'] The split separator. If a
+     * string, it is encoded as UTF-8.
      * @yields {Uint8Array} The stream chunks.
      */
     async * bySeparator(separator = '\n') {
