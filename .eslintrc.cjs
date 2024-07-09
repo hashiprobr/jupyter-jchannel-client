@@ -18,7 +18,7 @@ module.exports = {
         'no-cond-assign': ['warn'],
         'no-const-assign': ['warn'],
         'no-constant-binary-expression': ['warn'],
-        'no-constant-condition': ['warn'],
+        'no-constant-condition': ['warn', { checkLoops: 'allExceptWhileTrue' }],
         'no-constructor-return': ['warn'],
         'no-debugger': ['warn'],
         'no-dupe-args': ['warn'],

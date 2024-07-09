@@ -61,13 +61,34 @@ export class MetaGenerator {
      * @returns {Uint8Array} The joined stream chunks.
      */
     async join() {
-        const buffer = [];
+        let limit = 0;
+        let buffer = new Uint8Array();
+        let size = 0;
 
-        for await (const chunk of this) {
-            buffer.push(...chunk);
+        while (true) {
+            const result = await this.#reader.read();
+
+            if (result.done) {
+                break;
+            }
+
+            const chunk = result.value;
+            const length = chunk.length;
+
+            const newSize = size + length;
+
+            if (newSize > limit) {
+                limit = 2 ** Math.ceil(Math.log2(newSize));
+                const newBuffer = new Uint8Array(limit);
+                this.#set(newBuffer, 0, buffer, 0, size);
+                buffer = newBuffer;
+            }
+
+            buffer.set(chunk, size);
+            size = newSize;
         }
 
-        return new Uint8Array(buffer);
+        return buffer.subarray(0, size);
     }
 
     /**
@@ -162,9 +183,6 @@ export class MetaGenerator {
             const newSize = size + length;
 
             if (newSize > limit) {
-                // NOTE: The buffer capacity is always a
-                // power of 2. This ensures it does not
-                // need more than O(log n) reallocations.
                 limit = 2 ** Math.ceil(Math.log2(newSize));
                 const newBuffer = new Uint8Array(limit);
                 this.#set(newBuffer, 0, buffer, 0, size);
@@ -173,10 +191,6 @@ export class MetaGenerator {
 
             buffer.set(chunk, size);
             size = newSize;
-
-            // NOTE: This algorithm is O(nm), but seems
-            // reasonable to assume that the separator
-            // length is too small to make an impact.
 
             let shift = 0;
 
