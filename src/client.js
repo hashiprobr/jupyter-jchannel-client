@@ -172,13 +172,6 @@ export class Client {
                             }
                         }
 
-                        if (chunks && !stream) {
-                            let result;
-                            do {
-                                result = await chunks.next();
-                            } while (!result.done);
-                        }
-
                         body.payload = payload;
 
                         await this.#accept(socket, bodyType, body, stream);
