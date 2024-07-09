@@ -221,30 +221,37 @@ export class MetaGenerator {
             const encoder = new TextEncoder();
             return encoder.encode(separator);
         }
+
         if (separator instanceof Uint8Array) {
             return separator;
         }
+
         throw new TypeError('Separator must be a string or an Uint8Array');
     }
 
     #match(buffer, offset, separator) {
         let i = offset;
         let j = 0;
+
         while (j < separator.length) {
             if (buffer[i] !== separator[j]) {
                 return false;
             }
+
             i++;
             j++;
         }
+
         return true;
     }
 
     #set(target, offset, source, begin, end) {
         let i = offset;
         let j = begin;
+
         while (j < end) {
             target[i] = source[j];
+
             i++;
             j++;
         }
