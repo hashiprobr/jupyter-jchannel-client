@@ -38,7 +38,7 @@ test('handles with result', () => {
 test('handles with exception', () => {
     c.handler = {
         name() {
-            throw Error();
+            throw new Error();
         },
     };
     expect(() => c._handle('name', [1, 2])).toThrow(Error);
