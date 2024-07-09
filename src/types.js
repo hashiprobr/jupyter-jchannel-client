@@ -65,14 +65,7 @@ export class MetaGenerator {
         let buffer = new Uint8Array();
         let size = 0;
 
-        while (true) {
-            const result = await this.#reader.read();
-
-            if (result.done) {
-                break;
-            }
-
-            const chunk = result.value;
+        for await (const chunk of this) {
             const length = chunk.length;
 
             const newSize = size + length;
@@ -80,7 +73,7 @@ export class MetaGenerator {
             if (newSize > limit) {
                 limit = 2 ** Math.ceil(Math.log2(newSize));
                 const newBuffer = new Uint8Array(limit);
-                this.#set(newBuffer, 0, buffer, 0, size);
+                newBuffer.set(buffer.subarray(0, size));
                 buffer = newBuffer;
             }
 
@@ -110,21 +103,14 @@ export class MetaGenerator {
 
         let size = 0;
 
-        while (true) {
-            const result = await this.#reader.read();
-
-            if (result.done) {
-                break;
-            }
-
-            let chunk = result.value;
+        for await (let chunk of this) {
             let length = chunk.length;
 
             let begin = 0;
             let end = limit - size;
 
             if (length > end) {
-                this.#set(buffer, size, chunk, begin, end);
+                buffer.set(chunk.subarray(begin, end), size);
                 yield buffer.slice();
                 size = 0;
 
@@ -170,14 +156,7 @@ export class MetaGenerator {
         let size = 0;
         let offset = 0;
 
-        while (true) {
-            const result = await this.#reader.read();
-
-            if (result.done) {
-                break;
-            }
-
-            const chunk = result.value;
+        for await (const chunk of this) {
             const length = chunk.length;
 
             const newSize = size + length;
@@ -185,7 +164,7 @@ export class MetaGenerator {
             if (newSize > limit) {
                 limit = 2 ** Math.ceil(Math.log2(newSize));
                 const newBuffer = new Uint8Array(limit);
-                this.#set(newBuffer, 0, buffer, 0, size);
+                newBuffer.set(buffer.subarray(0, size));
                 buffer = newBuffer;
             }
 
@@ -205,7 +184,7 @@ export class MetaGenerator {
             }
 
             if (shift > 0) {
-                this.#set(buffer, 0, buffer, shift, size);
+                buffer.set(buffer.subarray(shift, size));
                 size -= shift;
                 offset -= shift;
             }
@@ -243,17 +222,5 @@ export class MetaGenerator {
         }
 
         return true;
-    }
-
-    #set(target, offset, source, begin, end) {
-        let i = offset;
-        let j = begin;
-
-        while (j < end) {
-            target[i] = source[j];
-
-            i++;
-            j++;
-        }
     }
 }
