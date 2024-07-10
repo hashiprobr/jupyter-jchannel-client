@@ -2,8 +2,8 @@ import { MetaGenerator } from '../types';
 
 let encoder, decoder;
 
-function createChunks(content) {
-    content.reverse();
+function createChunks(input) {
+    input.reverse();
 
     const stream = {
         getReader() {
@@ -12,8 +12,8 @@ function createChunks(content) {
                     let value;
                     let done;
 
-                    if (content.length) {
-                        const data = content.pop();
+                    if (input.length) {
+                        const data = input.pop();
 
                         value = encoder.encode(data);
                         done = false;
@@ -44,15 +44,15 @@ test('iterates', async () => {
         'def',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'a',
         '',
         'bc',
@@ -70,15 +70,15 @@ test('iterates by limit of four (1, 3, 7)', async () => {
         'efghijk',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.byLimit(4)) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcd',
         'efgh',
         'ijk',
@@ -94,15 +94,15 @@ test('iterates by limit of four (2, 4, 8)', async () => {
         'ghijklmn',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.byLimit(4)) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcd',
         'efgh',
         'ijkl',
@@ -119,15 +119,15 @@ test('iterates by limit of four (3, 5, 9)', async () => {
         'ijklmnopq',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.byLimit(4)) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcd',
         'efgh',
         'ijkl',
@@ -145,15 +145,15 @@ test('iterates by limit of four (4, 6, 10)', async () => {
         'klmnopqrst',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.byLimit(4)) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcd',
         'efgh',
         'ijkl',
@@ -164,7 +164,7 @@ test('iterates by limit of four (4, 6, 10)', async () => {
 
 test('does not iterate by non-integer limit', async () => {
     const chunks = createChunks([]);
-    const aiter = chunks.byLimit(true);
+    const aiter = chunks.byLimit('8192');
     await expect(() => aiter.next()).rejects.toThrow(TypeError);
 });
 
@@ -183,15 +183,15 @@ test('iterates by two-space separator (flex-start)', async () => {
         'pqr  st  u  ',
     ]);
 
-    const content = [];
+    const output = [];
 
-    for await (const chunk of chunks.bySeparator(new Uint8Array([32, 32]))) {
+    for await (const chunk of chunks.bySeparator('  ')) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcdef  ',
         'ghijk  ',
         'lmno  ',
@@ -210,15 +210,15 @@ test('iterates by two-space separator (flex-end)', async () => {
         '  pqr  st  u',
     ]);
 
-    const content = [];
+    const output = [];
 
-    for await (const chunk of chunks.bySeparator(new Uint8Array([32, 32]))) {
+    for await (const chunk of chunks.bySeparator('  ')) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         '  ',
         'abcdef  ',
         'ghijk  ',
@@ -238,15 +238,15 @@ test('iterates by two-space separator (space-around)', async () => {
         ' pqr  st  u ',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.bySeparator('  ')) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         ' abcdef  ',
         'ghijk  ',
         'lmno  ',
@@ -265,15 +265,15 @@ test('iterates by two-space separator (space-between)', async () => {
         'pqr  st  u',
     ]);
 
-    const content = [];
+    const output = [];
 
     for await (const chunk of chunks.bySeparator('  ')) {
         const data = decoder.decode(chunk);
 
-        content.push(data);
+        output.push(data);
     }
 
-    expect(content).toStrictEqual([
+    expect(output).toStrictEqual([
         'abcdefghijk  ',
         'lmnopqr  ',
         'st  ',
@@ -289,6 +289,6 @@ test('does not iterate by invalid separator', async () => {
 
 test('does not iterate by empty separator', async () => {
     const chunks = createChunks([]);
-    const aiter = chunks.bySeparator('');
+    const aiter = chunks.bySeparator(new Uint8Array());
     await expect(() => aiter.next()).rejects.toThrow(Error);
 });

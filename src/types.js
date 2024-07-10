@@ -66,9 +66,7 @@ export class MetaGenerator {
         let size = 0;
 
         for await (const chunk of this) {
-            const length = chunk.length;
-
-            const newSize = size + length;
+            const newSize = size + chunk.length;
 
             if (newSize > limit) {
                 limit = 2 ** Math.ceil(Math.log2(newSize));
@@ -157,9 +155,7 @@ export class MetaGenerator {
         let offset = 0;
 
         for await (const chunk of this) {
-            const length = chunk.length;
-
-            const newSize = size + length;
+            const newSize = size + chunk.length;
 
             if (newSize > limit) {
                 limit = 2 ** Math.ceil(Math.log2(newSize));
