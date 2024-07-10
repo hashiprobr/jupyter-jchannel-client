@@ -172,6 +172,10 @@ export class Client {
                             }
                         }
 
+                        if (chunks && !stream) {
+                            for await (const chunk of chunks);
+                        }
+
                         body.payload = payload;
 
                         await this.#accept(socket, bodyType, body, stream);

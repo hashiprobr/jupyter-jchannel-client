@@ -154,8 +154,16 @@ beforeEach(() => {
                 socket.write(new Uint8Array([0b10001000, 0]));
             }
 
-            function handleGet(bodyType, payload, stream) {
-                s.stream = stream;
+            function handleGet(bodyType, payload) {
+                async function* generate() {
+                    for (let i = 0; i < CONTENT_LENGTH; i++) {
+                        const b = encoder.encode(String(i));
+                        s.gotten.push(...b);
+                        yield b;
+                    }
+                }
+
+                s.stream = generate();
 
                 write(0b10000001, encode(bodyType, payload, STREAM_KEY));
             }
@@ -163,15 +171,7 @@ beforeEach(() => {
             function handleCall(name) {
                 const payload = `{"name":"${name}","args":[1,2]}`;
 
-                handleGet('call', payload, generate());
-            }
-
-            async function* generate() {
-                for (let i = 0; i < CONTENT_LENGTH; i++) {
-                    const b = encoder.encode(String(i));
-                    s.gotten.push(...b);
-                    yield b;
-                }
+                handleGet('call', payload);
             }
 
             const key = request.headers['sec-websocket-key'];
@@ -221,10 +221,10 @@ beforeEach(() => {
                                 handleCall('plain');
                                 break;
                             case 'get-pipe':
-                                handleGet('pipe', 'null', generate());
+                                handleGet('pipe', 'null');
                                 break;
                             case 'get-result':
-                                handleGet('result', null, generate());
+                                handleGet('result', null);
                                 break;
                             case 'closed':
                             case 'exception':
