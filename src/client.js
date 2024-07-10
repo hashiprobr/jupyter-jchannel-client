@@ -173,7 +173,10 @@ export class Client {
                         }
 
                         if (chunks && !stream) {
-                            for await (const chunk of chunks);
+                            let result;
+                            do {
+                                result = await chunks.next();
+                            } while (!result.done);
                         }
 
                         body.payload = payload;
