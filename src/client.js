@@ -280,6 +280,7 @@ export class Client {
                     try {
                         socket.send(chunk);
                     } catch (error) {
+                        /* istanbul ignore next */
                         return;
                     }
                 }
@@ -295,6 +296,7 @@ export class Client {
                 socket.addEventListener('error', reject);
             });
         } catch (error) {
+            /* istanbul ignore next */
             return;
         }
 

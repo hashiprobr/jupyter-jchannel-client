@@ -926,6 +926,7 @@ test('does not do invalid get', async () => {
 test('does partial post', async () => {
     async function* generatePartial() {
         yield encoder.encode('chunk');
+        yield new Uint8Array();
         throw new Error();
     }
 
