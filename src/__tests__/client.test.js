@@ -20,9 +20,9 @@ jest.mock('../channel', () => {
     };
 });
 
-const FUTURE_KEY = 123;
-const CHANNEL_KEY = 456;
-const STREAM_KEY = 789;
+const FUTURE_KEY = 12;
+const CHANNEL_KEY = 34;
+const STREAM_KEY = 56;
 
 const CONTENT_LENGTH = 1024;
 
@@ -120,7 +120,7 @@ class AbstractConnection {
                     break;
                 }
 
-                this.onFrame({ code, bytes });
+                this.onFrame(bytes, code);
 
                 chunk = chunk.subarray(end);
             }
@@ -179,7 +179,7 @@ class Connection extends AbstractConnection {
         this.handleGet('call', payload);
     }
 
-    onFrame({ code, bytes }) {
+    onFrame(bytes, code) {
         if (code === 0xA) {
             s.beating = true;
         } else {
