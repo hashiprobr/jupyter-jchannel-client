@@ -258,23 +258,27 @@ class Connection extends AbstractConnection {
 
                 const body = JSON.parse(data);
 
-                if (body.type === 'result') {
-                    s.body = body;
+                switch (body.type) {
+                    case 'result':
+                        await new Promise((resolve) => {
+                            request.on('data', (chunk) => {
+                                s.posted.push(...chunk);
+                            });
 
-                    await new Promise((resolve) => {
-                        request.on('data', (chunk) => {
-                            s.posted.push(...chunk);
+                            request.on('end', () => {
+                                resolve();
+                            });
                         });
-
-                        request.on('end', () => {
-                            resolve();
-                        });
-                    });
-                } else {
-                    response.statusCode = 400;
+                        s.body = body;
+                        this.close();
+                        break;
+                    case 'post-invalid':
+                        response.statusCode = 400;
+                        this.close();
+                        break;
+                    default:
+                        response.statusCode = 503;
                 }
-
-                this.close();
             }
 
             response.end();
@@ -885,6 +889,7 @@ test('does not do invalid post', async () => {
     await s.start();
     const c = client();
     await c._connection;
+    await expect(() => send(c, 'post-shield', null, generate())).rejects.toThrow(Error);
     await expect(() => send(c, 'post-invalid', null, generate())).rejects.toThrow(Error);
     await c._disconnection;
     await s.stop();
