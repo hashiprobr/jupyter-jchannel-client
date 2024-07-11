@@ -25,7 +25,7 @@ const CHANNEL_KEY = 34;
 const STREAM_KEY = 56;
 const QUEUE_KEY = 78;
 
-const CONTENT_LENGTH = 16;
+const CONTENT_LENGTH = 1024;
 
 let encoder, future, event, s;
 
@@ -103,10 +103,36 @@ class AbstractConnection {
         this.socket.on('data', (chunk) => {
             while (chunk.length > 0) {
                 const code = chunk[0] & 0b00001111;
-                const end = 6 + chunk[1] & 0b01111111;
 
-                const mask = chunk.subarray(2, 6);
-                const bytes = chunk.subarray(6, end);
+                let length = chunk[1] & 0b01111111;
+
+                let start;
+                let bytes;
+
+                if (length < 126) {
+                    start = 2;
+                } else {
+                    if (length < 127) {
+                        bytes = chunk.subarray(2, 4);
+                    } else {
+                        bytes = chunk.subarray(2, 8);
+                    }
+
+                    length = 0;
+
+                    for (const byte of bytes) {
+                        length = length << 8 | byte;
+                    }
+
+                    start = 2 + bytes.length;
+                }
+
+                const middle = start + 4;
+                const end = middle + length;
+
+                const mask = chunk.subarray(start, middle);
+
+                bytes = chunk.subarray(middle, end);
 
                 for (let i = 0; i < bytes.length; i++) {
                     bytes[i] ^= mask[i % 4];
