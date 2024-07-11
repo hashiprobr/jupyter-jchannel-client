@@ -273,27 +273,63 @@ export class Client {
         return new MetaGenerator(response.body);
     }
 
+    async #doUpload(socket, stream) {
+        try {
+            for await (const chunk of stream) {
+                if (chunk.length) {
+                    try {
+                        socket.send(chunk);
+                    } catch (error) {
+                        return;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Post writing exception', error);
+        }
+
+        try {
+            socket.send(new Uint8Array());
+            await new Promise((resolve, reject) => {
+                socket.addEventListener('message', resolve);
+                socket.addEventListener('error', reject);
+            });
+        } catch (error) {
+            return;
+        }
+
+        socket.close();
+    }
+
     async #doPost(data, stream) {
         const headers = { 'x-jchannel-data': data };
 
-        const body = new ReadableStream({
-            type: 'bytes',
+        // const body = new ReadableStream({
+        //     type: 'bytes',
+        //
+        //     async pull(controller) {
+        //         try {
+        //             const result = await stream.next();
+        //
+        //             if (result.done) {
+        //                 controller.close();
+        //             } else {
+        //                 controller.enqueue(result.value);
+        //             }
+        //         } catch (error) {
+        //             console.error('Post writing exception', error);
+        //
+        //             controller.close();
+        //         }
+        //     },
+        // });
 
-            async pull(controller) {
-                try {
-                    const result = await stream.next();
+        const socket = new WebSocket(`ws${this.#url.slice(4)}/upload`);
 
-                    if (result.done) {
-                        controller.close();
-                    } else {
-                        controller.enqueue(result.value);
-                    }
-                } catch (error) {
-                    console.error('Post writing exception', error);
-
-                    controller.close();
-                }
-            },
+        const body = await new Promise((resolve) => {
+            socket.addEventListener('message', (event) => {
+                resolve(event.data);
+            });
         });
 
         const init = {
@@ -304,7 +340,19 @@ export class Client {
         };
 
         const response = await fetch(this.#url, init);
-        const status = response.status;
+        //const status = response.status;
+
+        let status = response.status;
+
+        if (status === 200) {
+            await this.#doUpload(socket, stream);
+
+            const content = await response.text();
+
+            status = Number(content);
+        } else {
+            socket.close();
+        }
 
         if (status !== 200) {
             throw new Error(`Unexpected post response status ${status}`);

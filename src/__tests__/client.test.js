@@ -23,8 +23,9 @@ jest.mock('../channel', () => {
 const FUTURE_KEY = 12;
 const CHANNEL_KEY = 34;
 const STREAM_KEY = 56;
+const QUEUE_KEY = 78;
 
-const CONTENT_LENGTH = 1024;
+const CONTENT_LENGTH = 16;
 
 let encoder, future, event, s;
 
@@ -260,29 +261,56 @@ class Connection extends AbstractConnection {
 
                 switch (body.type) {
                     case 'result':
-                        await new Promise((resolve) => {
-                            request.on('data', (chunk) => {
-                                s.posted.push(...chunk);
-                            });
+                        // await new Promise((resolve) => {
+                        //     request.on('data', (chunk) => {
+                        //         s.posted.push(...chunk);
+                        //     });
+                        //
+                        //     request.on('end', () => {
+                        //         resolve();
+                        //     });
+                        // });
 
-                            request.on('end', () => {
-                                resolve();
-                            });
+                        await new Promise((resolve) => {
+                            request.on('data', () => { });
+                            request.on('end', resolve);
                         });
+                        response.write('200');
                         s.body = body;
                         this.close();
                         break;
                     case 'post-invalid':
-                        response.statusCode = 400;
+                        // response.statusCode = 503;
+
+                        response.write('503');
                         this.close();
                         break;
                     default:
-                        response.statusCode = 503;
+                        response.statusCode = 400;
                 }
             }
 
             response.end();
         });
+    }
+}
+
+class StreamConnection extends AbstractConnection {
+    constructor(socket) {
+        super(socket);
+        this.postDestroy = () => { };
+    }
+
+    onFrame(bytes) {
+        if (bytes.length) {
+            s.posted.push(...bytes);
+        } else {
+            this.socket.write(new Uint8Array([0b10000010, 0]));
+        }
+    }
+
+    postPrepare() {
+        this.write(0b10000001, encoder.encode(String(QUEUE_KEY)));
     }
 }
 
@@ -336,7 +364,15 @@ beforeEach(() => {
 
     s.session = new Promise((resolve) => {
         s.on('upgrade', (request, socket) => {
-            const connection = new Connection(socket, resolve);
+            // const connection = new Connection(socket, resolve);
+
+            let connection;
+
+            if (request.url === '/socket') {
+                connection = new Connection(socket, resolve);
+            } else {
+                connection = new StreamConnection(socket);
+            }
 
             connection.prepare(request.headers);
         });
@@ -810,6 +846,12 @@ test('does pipe get', async () => {
 });
 
 test('does plain get', async () => {
+    let arg = 0;
+
+    for (let i = 0; i < CONTENT_LENGTH; i++) {
+        arg += String(i).length;
+    }
+
     s.shield += 1;
     await s.start();
     const c = client();
@@ -820,7 +862,7 @@ test('does plain get', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe('[1,2,2986]');
+    expect(s.body.payload).toBe(`[1,2,${arg}]`);
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });
