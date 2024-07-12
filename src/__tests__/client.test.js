@@ -103,7 +103,6 @@ class AbstractConnection {
         this.socket.on('data', (chunk) => {
             while (chunk.length > 0) {
                 const code = chunk[0] & 0b00001111;
-
                 let length = chunk[1] & 0b01111111;
 
                 let start;
@@ -115,7 +114,7 @@ class AbstractConnection {
                     if (length < 127) {
                         bytes = chunk.subarray(2, 4);
                     } else {
-                        bytes = chunk.subarray(2, 8);
+                        bytes = chunk.subarray(2, 10);
                     }
 
                     length = 0;
@@ -131,7 +130,6 @@ class AbstractConnection {
                 const end = middle + length;
 
                 const mask = chunk.subarray(start, middle);
-
                 bytes = chunk.subarray(middle, end);
 
                 for (let i = 0; i < bytes.length; i++) {
@@ -209,62 +207,63 @@ class Connection extends AbstractConnection {
     onFrame(bytes, code) {
         if (code === 0xA) {
             s.beating = true;
-        } else {
-            const data = bytes.toString();
+            return;
+        }
 
-            const body = JSON.parse(data);
+        const data = bytes.toString();
 
-            const bodyType = body.type;
+        const body = JSON.parse(data);
 
-            switch (bodyType) {
-                case 'get-invalid':
-                    this.write(0b10000001, this.encode('type', 'null', 0));
+        const bodyType = body.type;
+
+        switch (bodyType) {
+            case 'get-invalid':
+                this.write(0b10000001, this.encode('type', 'null', 0));
+                break;
+            case 'get-octet':
+                this.handleCall('octet');
+                break;
+            case 'get-plain':
+                this.handleCall('plain');
+                break;
+            case 'get-pipe':
+                this.handleGet('pipe', 'null');
+                break;
+            case 'get-result':
+                this.handleGet('result', null);
+                break;
+            case 'closed':
+            case 'exception':
+            case 'result':
+                if (s.shield) {
+                    s.shield--;
                     break;
-                case 'get-octet':
-                    this.handleCall('octet');
-                    break;
-                case 'get-plain':
-                    this.handleCall('plain');
-                    break;
-                case 'get-pipe':
-                    this.handleGet('pipe', 'null');
-                    break;
-                case 'get-result':
-                    this.handleGet('result', null);
-                    break;
-                case 'closed':
-                case 'exception':
-                case 'result':
-                    if (s.shield) {
-                        s.shield--;
-                        break;
-                    } else {
-                        s.body = body;
-                    }
-                case 'socket-close':
-                    this.close();
-                    break;
-                case 'socket-heart':
-                    this.socket.write(new Uint8Array([0b10001001, 0]));
-                    break;
-                case 'socket-bytes':
-                    this.socket.write(new Uint8Array([0b10000010, 0]));
-                    break;
-                case 'empty-message':
-                    this.socket.write(new Uint8Array([0b10000001, 0]));
-                    break;
-                case 'empty-body':
-                    this.socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
-                    break;
-                case 'mock-exception':
-                    this.write(0b10000001, this.encode('exception', 'message', null));
-                    break;
-                case 'mock-result':
-                    this.write(0b10000001, this.encode('result', 'true', null));
-                    break;
-                default:
-                    this.write(0b10000001, this.encode(bodyType, body.payload, null));
-            }
+                } else {
+                    s.body = body;
+                }
+            case 'socket-close':
+                this.close();
+                break;
+            case 'socket-heart':
+                this.socket.write(new Uint8Array([0b10001001, 0]));
+                break;
+            case 'socket-bytes':
+                this.socket.write(new Uint8Array([0b10000010, 0]));
+                break;
+            case 'empty-message':
+                this.socket.write(new Uint8Array([0b10000001, 0]));
+                break;
+            case 'empty-body':
+                this.socket.write(new Uint8Array([0b10000001, 2, 123, 125]));
+                break;
+            case 'mock-exception':
+                this.write(0b10000001, this.encode('exception', 'message', null));
+                break;
+            case 'mock-result':
+                this.write(0b10000001, this.encode('result', 'true', null));
+                break;
+            default:
+                this.write(0b10000001, this.encode(bodyType, body.payload, null));
         }
     }
 
@@ -331,7 +330,7 @@ class StreamConnection extends AbstractConnection {  // pseudo-stream
         if (bytes.length) {
             s.posted.push(...bytes);
         } else {
-            this.socket.write(new Uint8Array([0b10000010, 0]));
+            this.write(0b10000010, bytes);
         }
     }
 
