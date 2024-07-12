@@ -321,7 +321,7 @@ class Connection extends AbstractConnection {
     }
 }
 
-class StreamConnection extends AbstractConnection {
+class StreamConnection extends AbstractConnection {  // pseudo-stream
     constructor(socket) {
         super(socket);
         this.postDestroy = () => { };

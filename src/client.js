@@ -273,7 +273,7 @@ export class Client {
         return new MetaGenerator(response.body);
     }
 
-    async #doUpload(socket, stream) {
+    async #doUpload(socket, stream) {  // pseudo-stream
         try {
             for await (const chunk of stream) {
                 if (chunk.length) {
@@ -291,6 +291,7 @@ export class Client {
 
         try {
             socket.send(new Uint8Array());
+
             await new Promise((resolve, reject) => {
                 socket.addEventListener('message', resolve);
                 socket.addEventListener('error', reject);
