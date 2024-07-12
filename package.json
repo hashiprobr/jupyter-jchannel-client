@@ -1,6 +1,6 @@
 {
   "name": "jupyter-jchannel-client",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "JavaScript client for jupyter-jchannel",
   "homepage": "https://github.com/hashiprobr/jupyter-jchannel-client#readme",
   "bugs": {
@@ -31,11 +31,11 @@
     "testEnvironment": "jest-fixed-jsdom"
   },
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.24.7",
+    "@babel/plugin-transform-modules-commonjs": "^7.24.8",
     "@stylistic/eslint-plugin-js": "^2.3.0",
     "eslint": "^8.57.0",
     "eslint-plugin-jest": "^28.6.0",
-    "eslint-plugin-jsdoc": "^48.5.2",
+    "eslint-plugin-jsdoc": "^48.7.0",
     "jest": "^29.7.0",
     "jest-fixed-jsdom": "~0.0.2",
     "jsdoc": "^4.0.3",
