@@ -8,6 +8,7 @@ jest.mock('../client', () => {
 });
 
 const URL = 'http://localhost:8889';
+const MMS = 2048;
 
 let i;
 
@@ -34,7 +35,7 @@ function mockClient(readyState) {
 }
 
 function start() {
-    return i.start(URL);
+    return i.start(URL, MMS);
 }
 
 function stop() {

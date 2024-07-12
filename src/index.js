@@ -7,8 +7,8 @@ export class Index {
         this.#clients = {};
     }
 
-    start(url) {
-        const next = this.#start(url, this.#clients[url]);
+    start(url, mms) {
+        const next = this.#start(url, mms, this.#clients[url]);
         this.#clients[url] = next;
         return next;
     }
@@ -23,7 +23,7 @@ export class Index {
         delete this.#clients[url];
     }
 
-    async #start(url, prev) {
+    async #start(url, mms, prev) {
         if (prev) {
             const client = await prev;
 
@@ -40,7 +40,7 @@ export class Index {
             }
         }
 
-        return new Client(url);
+        return new Client(url, mms);
     }
 
     async #stop(prev) {

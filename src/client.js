@@ -6,9 +6,11 @@ import { Channel } from './channel';
 
 export class Client {
     #url;
+    #mms;
 
-    constructor(url) {
+    constructor(url, mms) {
         this.#url = url;
+        this.#mms = mms;
 
         const socket = new WebSocket(`ws${url.slice(4)}/socket`);
 
@@ -273,11 +275,21 @@ export class Client {
         return new MetaGenerator(response.body);
     }
 
+    async #doSleep(timeout) {
+        await new Promise((resolve) => setTimeout(resolve, timeout));
+    }
+
     async #doUpload(socket, stream) {  // pseudo-stream
         try {
             for await (const chunk of stream) {
                 if (chunk.length) {
                     try {
+                        let timeout = 15;
+                        while (socket.readyState === WebSocket.OPEN && socket.bufferedAmount >= this.#mms) {
+                            timeout *= 2;
+                            await this.#doSleep(timeout);
+                        }
+
                         socket.send(chunk);
                     } catch (error) {
                         /* istanbul ignore next */
