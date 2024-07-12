@@ -132,7 +132,7 @@ export class Client {
                                                 }
 
                                                 if (chunks) {
-                                                    args.push(chunks);
+                                                    args.unshift(chunks);
                                                 }
 
                                                 output = channel._handle(name, args);

@@ -114,6 +114,19 @@ export class Channel {
         return await this.#send('call', { name, args }, undefined);
     }
 
+    /**
+     * Makes a call to the server with a byte stream as its first argument.
+     *
+     * @param {string} name The name of a server handler method.
+     * @param {object} stream The first argument of the call, an async iterable
+     * of Uint8Array instances.
+     * @param {any} args The other arguments of the call.
+     * @returns {any} The return value of the method.
+     */
+    async callWithStream(name, stream, ...args) {
+        return await this.#send('call', { name, args }, stream);
+    }
+
     async #send(bodyType, input, stream) {
         if (this.#client === null) {
             throw new StateError('Channel is closed');

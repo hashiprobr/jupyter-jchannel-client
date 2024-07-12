@@ -44,7 +44,7 @@ function mockChannel(client, key) {
             }
             if (name === 'octet') {
                 async function* generate() {
-                    for await (const chunk of args.at(-1).byLimit()) {
+                    for await (const chunk of args[0].byLimit()) {
                         yield chunk;
                     }
                 }
@@ -61,10 +61,10 @@ function mockChannel(client, key) {
 
         async _consume(args) {
             let arg = 0;
-            for await (const chunk of args.at(-1).bySeparator()) {
+            for await (const chunk of args[0].bySeparator()) {
                 arg += chunk.length;
             }
-            args.splice(-1, 1, arg);
+            args[0] = arg;
             return args;
         },
 
@@ -887,7 +887,7 @@ test('does plain get', async () => {
     await s.stop();
     expect(Object.keys(s.body)).toHaveLength(4);
     expect(s.body.type).toBe('result');
-    expect(s.body.payload).toBe(`[1,2,${arg}]`);
+    expect(s.body.payload).toBe(`[${arg},1,2]`);
     expect(s.body.channel).toBe(CHANNEL_KEY);
     expect(s.body.future).toBe(FUTURE_KEY);
 });

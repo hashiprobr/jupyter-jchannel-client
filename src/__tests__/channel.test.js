@@ -74,6 +74,12 @@ test('calls', async () => {
     await expect(c.call('name', 1, 2)).resolves.toStrictEqual(output);
 });
 
+test('calls with stream', async () => {
+    const stream = {};
+    const output = ['call', KEY, { name: 'name', args: [1, 2] }, stream];
+    await expect(c.callWithStream('name', stream, 1, 2)).resolves.toStrictEqual(output);
+});
+
 test('closes, does not call, and does not close', async () => {
     c.close();
     expect(KEY in client._channels).toBe(false);
