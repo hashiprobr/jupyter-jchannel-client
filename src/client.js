@@ -311,7 +311,11 @@ export class Client {
         //
         //     async pull(controller) {
         //         try {
-        //             const result = await stream.next();
+        //             let result;
+        //
+        //             do {
+        //                 result = await stream.next();
+        //             } while (!(result.done || result.value.length));
         //
         //             if (result.done) {
         //                 controller.close();
