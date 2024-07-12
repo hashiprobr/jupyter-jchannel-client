@@ -115,7 +115,9 @@ export class Channel {
     }
 
     /**
-     * Makes a call to the server with a byte stream as its first argument.
+     * Makes a call to the server with a byte stream as its first argument. The
+     * method receives it as a
+     * {@link https://jupyter-jchannel.readthedocs.io/en/latest/jchannel.types.html#jchannel.types.MetaGenerator|server MetaGenerator}.
      *
      * @param {string} name The name of a server handler method.
      * @param {object} stream The first argument of the call, an async iterable
