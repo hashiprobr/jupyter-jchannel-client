@@ -7,6 +7,5 @@ jupyter-jchannel-client
 [![JSDoc](https://img.shields.io/badge/docs-reference-blue)](https://hashiprobr.github.io/jupyter-jchannel-client)
 
 **JavaScript client for
-[jupyter-jchannel](https://github.com/hashiprobr/jupyter-jchannel).**
-
-This library should not be used on its own.
+[jupyter-jchannel](https://github.com/hashiprobr/jupyter-jchannel). This library
+should not be used on its own.**
