@@ -342,7 +342,7 @@ class StreamConnection extends AbstractConnection {  // pseudo-stream
     }
 }
 
-function client() {
+function createClient() {
     const registry = {
         store: jest.fn(),
         retrieve: jest.fn(),
@@ -434,7 +434,7 @@ afterEach(() => {
 });
 
 test('does not send with invalid stream', async () => {
-    const c = client();
+    const c = createClient();
     await expect(c._connection).rejects.toThrow(StateError);
     await expect(send(c, 'closed', null, true)).rejects.toThrow(TypeError);
     await c._disconnection;
@@ -442,7 +442,7 @@ test('does not send with invalid stream', async () => {
 
 test('does not connect and does not send', async () => {
     const error = jest.spyOn(console, 'error');
-    const c = client();
+    const c = createClient();
     await expect(c._connection).rejects.toThrow(StateError);
     await expect(send(c, 'closed')).rejects.toThrow(StateError);
     await c._disconnection;
@@ -454,7 +454,7 @@ test('does not connect and does not send', async () => {
 test('connects, errors, and does not send', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     const socket = await c._connection;
     socket.dispatchEvent(new Event('error'));
     socket.close();
@@ -468,7 +468,7 @@ test('connects, errors, and does not send', async () => {
 
 test('connects, pings, and disconnects', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'socket-heart');
     await send(c, 'socket-close');
@@ -481,7 +481,7 @@ test('connects, pings, and disconnects', async () => {
 test('receives unexpected message type', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'socket-bytes');
     await c._disconnection;
@@ -493,7 +493,7 @@ test('receives unexpected message type', async () => {
 test('receives empty message', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'empty-message');
     await c._disconnection;
@@ -505,7 +505,7 @@ test('receives empty message', async () => {
 test('receives empty body', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'empty-body');
     await c._disconnection;
@@ -516,7 +516,7 @@ test('receives empty body', async () => {
 
 test('receives exception', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'mock-exception');
     await send(c, 'socket-close');
@@ -530,7 +530,7 @@ test('receives exception', async () => {
 
 test('receives result', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'mock-result');
     await send(c, 'socket-close');
@@ -544,7 +544,7 @@ test('receives result', async () => {
 test('opens twice', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await open(c);
@@ -559,7 +559,7 @@ test('opens twice', async () => {
 
 test('opens async', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, 'async () => true');
     await c._disconnection;
@@ -573,7 +573,7 @@ test('opens async', async () => {
 
 test('opens undef', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, '() => { }');
     await c._disconnection;
@@ -588,7 +588,7 @@ test('opens undef', async () => {
 test('does not open error', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, '() => { throw new Error(); }');
     await c._disconnection;
@@ -605,7 +605,7 @@ test('does not open error', async () => {
 test('does not open with invalid code', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, '() =>');
     await c._disconnection;
@@ -621,7 +621,7 @@ test('does not open with invalid code', async () => {
 
 test('does not open with non-function code', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, 'true');
     await c._disconnection;
@@ -635,7 +635,7 @@ test('does not open with non-function code', async () => {
 
 test('does not open with non-string code', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c, true);
     await c._disconnection;
@@ -650,7 +650,7 @@ test('does not open with non-string code', async () => {
 test('closes twice', async () => {
     s.shield += 2;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'close');
@@ -668,7 +668,7 @@ test('closes twice', async () => {
 test('echoes', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'echo', 3);
@@ -683,7 +683,7 @@ test('echoes', async () => {
 
 test('does not echo', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'echo', 3);
     await c._disconnection;
@@ -698,7 +698,7 @@ test('does not echo', async () => {
 test('calls', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: 'name', args: [1, 2] });
@@ -714,7 +714,7 @@ test('calls', async () => {
 test('calls async', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: 'async', args: [1, 2] });
@@ -730,7 +730,7 @@ test('calls async', async () => {
 test('calls undef', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: 'undef', args: [1, 2] });
@@ -747,7 +747,7 @@ test('does not call error', async () => {
     const error = jest.spyOn(console, 'error');
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: 'error', args: [1, 2] });
@@ -766,7 +766,7 @@ test('does not call with empty input', async () => {
     const error = jest.spyOn(console, 'error');
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', {});
@@ -785,7 +785,7 @@ test('does not call with non-string name', async () => {
     const error = jest.spyOn(console, 'error');
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: true, args: [1, 2] });
@@ -804,7 +804,7 @@ test('does not call with non-array args', async () => {
     const error = jest.spyOn(console, 'error');
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'call', { name: 'name', args: true });
@@ -822,7 +822,7 @@ test('does not call with non-array args', async () => {
 test('receives unexpected body type', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'type');
@@ -837,7 +837,7 @@ test('receives unexpected body type', async () => {
 
 test('does result get', async () => {
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'get-result');
 
@@ -858,7 +858,7 @@ test('does result get', async () => {
 test('does pipe get', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'get-pipe');
@@ -882,7 +882,7 @@ test('does plain get', async () => {
 
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'get-plain');
@@ -898,7 +898,7 @@ test('does plain get', async () => {
 test('does octet get', async () => {
     s.shield += 1;
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await open(c);
     await send(c, 'get-octet');
@@ -916,7 +916,7 @@ test('does octet get', async () => {
 test('does not do invalid get', async () => {
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'get-invalid');
     await c._disconnection;
@@ -934,7 +934,7 @@ test('does partial post', async () => {
 
     const error = jest.spyOn(console, 'error');
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await send(c, 'result', null, generatePartial());
     await c._disconnection;
@@ -958,7 +958,7 @@ test('does not do invalid post', async () => {
     }
 
     await s.start();
-    const c = client();
+    const c = createClient();
     await c._connection;
     await expect(() => send(c, 'post-shield', null, generate())).rejects.toThrow(Error);
     await expect(() => send(c, 'post-invalid', null, generate())).rejects.toThrow(Error);
