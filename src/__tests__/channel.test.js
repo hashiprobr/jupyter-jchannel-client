@@ -3,7 +3,8 @@ import { Channel } from '../channel';
 
 const KEY = 123;
 
-let client, c;
+let client;
+let c;
 
 beforeEach(() => {
     client = {

@@ -1,6 +1,7 @@
 import { MetaGenerator } from '../types';
 
-let encoder, decoder;
+let encoder;
+let decoder;
 
 function createChunks(input) {
     input.reverse();

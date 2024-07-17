@@ -276,7 +276,9 @@ export class Client {
     }
 
     async #doSleep(timeout) {
-        await new Promise((resolve) => setTimeout(resolve, timeout));
+        await new Promise((resolve) => {
+            setTimeout(resolve, timeout);
+        });
     }
 
     async #doUpload(socket, stream) {  // pseudo-stream
@@ -359,7 +361,7 @@ export class Client {
         };
 
         const response = await fetch(this.#url, init);
-        //const status = response.status;
+        // const status = response.status;
 
         let status = response.status;
 

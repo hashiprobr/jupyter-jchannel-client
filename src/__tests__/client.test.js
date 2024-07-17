@@ -27,7 +27,10 @@ const QUEUE_KEY = 78;
 
 const CONTENT_LENGTH = 1024;
 
-let encoder, future, event, s;
+let encoder;
+let future;
+let event;
+let s;
 
 function mockChannel(client, key) {
     const channel = {
