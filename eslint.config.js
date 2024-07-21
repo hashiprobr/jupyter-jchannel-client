@@ -224,7 +224,7 @@ export default [
     },
     {
         files: [
-            '**/__tests__/**',
+            '**/__tests__/*',
         ],
         plugins: {
             jest,
