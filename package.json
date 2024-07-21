@@ -12,7 +12,6 @@
   },
   "license": "EPL-2.0",
   "author": "Marcelo Hashimoto <marcelo.hashimoto@gmail.com>",
-  "type": "module",
   "main": "src/index.js",
   "files": [
     "src",
@@ -37,7 +36,7 @@
     "eslint-plugin-jest": "^28.6.0",
     "eslint-plugin-jsdoc": "^48.7.0",
     "jest": "^29.7.0",
-    "jest-fixed-jsdom": "~0.0.2",
+    "jest-fixed-jsdom": "0.0.2",
     "jsdoc": "^4.0.3",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4"
