@@ -44,10 +44,6 @@ let s;
 
 function mockChannel(client, key) {
     const channel = {
-        close() {
-            delete client._channels[key];
-        },
-
         _handle(name, args) {
             if (name === 'error') {
                 throw new Error();

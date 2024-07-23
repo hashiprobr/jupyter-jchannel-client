@@ -117,7 +117,7 @@ export class Client {
                                 break;
                             case 'close':
                                 if (channel) {
-                                    channel.close();
+                                    delete this._channels[channelKey];
                                 }
                                 payload = 'null';
                                 bodyType = 'result';

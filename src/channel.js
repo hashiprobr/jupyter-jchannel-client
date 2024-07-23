@@ -8,8 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import { StateError } from './types';
-
 /**
  * Represents a communication channel between a frontend client and a kernel
  * server.
@@ -17,37 +15,16 @@ import { StateError } from './types';
  * @hideconstructor
  */
 export class Channel {
-    #client;
+    #ref;
     #key;
     #handler;
 
     constructor(client, key) {
         client._channels[key] = this;
 
-        this.#client = client;
+        this.#ref = new WeakRef(client);
         this.#key = key;
         this.#handler = null;
-    }
-
-    /**
-     * Closes this channel.
-     *
-     * Under normal circumstances, this method should not be called. It should
-     * only be called for debugging or testing purposes.
-     *
-     * A closed channel cannot be used for anything. There is no reason to keep
-     * references to it.
-     *
-     * @throws {StateError} If this channel is already closed.
-     */
-    close() {
-        if (this.#client === null) {
-            throw new StateError('Channel already closed');
-        }
-
-        delete this.#client._channels[this.#key];
-
-        this.#client = null;
     }
 
     /**
@@ -140,11 +117,9 @@ export class Channel {
     }
 
     async #send(bodyType, input, stream) {
-        if (this.#client === null) {
-            throw new StateError('Channel is closed');
-        }
+        const client = this.#ref.deref();
 
-        const future = await this.#client._send(bodyType, this.#key, input, stream);
+        const future = await client._send(bodyType, this.#key, input, stream);
 
         return await future;
     }

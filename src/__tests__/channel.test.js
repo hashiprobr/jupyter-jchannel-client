@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import { StateError } from '../types';
 import { Channel } from '../channel';
 
 const KEY = 123;
@@ -89,11 +88,4 @@ test('calls with stream', async () => {
     const stream = {};
     const output = ['call', KEY, { name: 'name', args: [1, 2] }, stream];
     await expect(c.callWithStream('name', stream, 1, 2)).resolves.toStrictEqual(output);
-});
-
-test('closes, does not call, and does not close', async () => {
-    c.close();
-    expect(KEY in client._channels).toBe(false);
-    await expect(c.call('name', 1, 2)).rejects.toThrow(StateError);
-    expect(() => c.close()).toThrow(StateError);
 });
