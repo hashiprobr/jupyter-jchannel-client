@@ -23,7 +23,7 @@
     "doc": "jsdoc src jsdoc.md --configure jsdoc.json --destination docs",
     "start": "webpack serve --mode development --devtool eval-source-map",
     "test": "jest",
-    "type": "npx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outFile src/index.d.ts"
+    "type": "npx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir src"
   },
   "jest": {
     "coverageReporters": [
