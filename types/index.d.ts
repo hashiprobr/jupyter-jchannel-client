@@ -6,5 +6,4 @@ export class Index {
 }
 declare const _default: Index;
 export default _default;
-export { Channel };
-import { Channel } from './channel';
+export { Channel } from "./channel";

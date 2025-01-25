@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-import { Channel } from './channel';
 import { Client } from './client';
 
 export class Index {
@@ -77,4 +76,4 @@ export class Index {
 
 export default new Index();
 
-export { Channel };
+export { Channel } from './channel';
