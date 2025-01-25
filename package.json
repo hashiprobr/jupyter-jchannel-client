@@ -31,7 +31,11 @@
     "coverageReporters": [
       "lcov"
     ],
-    "testEnvironment": "jest-fixed-jsdom"
+    "testEnvironment": "jest-fixed-jsdom",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/types/"
+    ]
   },
   "devDependencies": {
     "@babel/plugin-transform-modules-commonjs": "^7.26.3",
