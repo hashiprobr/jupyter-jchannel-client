@@ -14,16 +14,18 @@
   "author": "Marcelo Hashimoto <marcelo.hashimoto@gmail.com>",
   "type": "module",
   "main": "src/index.js",
+  "types": "types/index.d.js",
   "files": [
     "src",
-    "dist"
+    "dist",
+    "types"
   ],
   "scripts": {
     "build": "webpack --mode production --devtool source-map",
     "doc": "jsdoc src jsdoc.md --configure jsdoc.json --destination docs",
     "start": "webpack serve --mode development --devtool eval-source-map",
     "test": "jest",
-    "type": "npx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir src"
+    "types": "npx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types"
   },
   "jest": {
     "coverageReporters": [
