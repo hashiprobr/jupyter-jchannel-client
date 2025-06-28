@@ -10,7 +10,7 @@ jobs:
     steps:
 
     - name: Setup Node.js 22.x
-      uses: actions/setup-node@v4.1.0
+      uses: actions/setup-node@v4.4.0
       with:
         node-version: 22.x
 
@@ -24,4 +24,4 @@ jobs:
       run: npm test -- --silent --coverage
 
     - name: Coveralls GitHub Action
-      uses: coverallsapp/github-action@v2.3.5
+      uses: coverallsapp/github-action@v2.3.6
