@@ -1,11 +1,11 @@
-import stylisticJs from '@stylistic/eslint-plugin-js';
+import stylistic from '@stylistic/eslint-plugin';
 import jsdoc from 'eslint-plugin-jsdoc';
 import jest from 'eslint-plugin-jest';
 
 export default [
     {
         plugins: {
-            '@stylistic/js': stylisticJs,
+            '@stylistic': stylistic,
             jsdoc,
         },
         rules: {
@@ -164,26 +164,26 @@ export default [
             // Layout & Formatting
             'unicode-bom': ['warn'],
 
-            '@stylistic/js/arrow-parens': ['warn'],
-            '@stylistic/js/comma-dangle': ['warn', 'always-multiline'],
-            '@stylistic/js/comma-style': ['warn'],
-            '@stylistic/js/dot-location': ['warn', 'property'],
-            '@stylistic/js/eol-last': ['warn'],
-            '@stylistic/js/linebreak-style': ['warn'],
-            '@stylistic/js/max-statements-per-line': ['warn'],
-            '@stylistic/js/new-parens': ['warn'],
-            '@stylistic/js/no-confusing-arrow': ['warn'],
-            '@stylistic/js/no-extra-parens': ['warn'],
-            '@stylistic/js/no-extra-semi': ['warn'],
-            '@stylistic/js/no-floating-decimal': ['warn'],
-            '@stylistic/js/no-multiple-empty-lines': ['warn', { max: 1, maxEOF: 0 }],
-            '@stylistic/js/operator-linebreak': ['warn', 'before'],
-            '@stylistic/js/padded-blocks': ['warn', 'never'],
-            '@stylistic/js/quote-props': ['warn', 'consistent-as-needed'],
-            '@stylistic/js/quotes': ['warn', 'single'],
-            '@stylistic/js/semi': ['warn'],
-            '@stylistic/js/semi-style': ['warn'],
-            '@stylistic/js/spaced-comment': ['warn'],
+            '@stylistic/arrow-parens': ['warn'],
+            '@stylistic/comma-dangle': ['warn', 'always-multiline'],
+            '@stylistic/comma-style': ['warn'],
+            '@stylistic/dot-location': ['warn', 'property'],
+            '@stylistic/eol-last': ['warn'],
+            '@stylistic/linebreak-style': ['warn'],
+            '@stylistic/max-statements-per-line': ['warn'],
+            '@stylistic/new-parens': ['warn'],
+            '@stylistic/no-confusing-arrow': ['warn'],
+            '@stylistic/no-extra-parens': ['warn'],
+            '@stylistic/no-extra-semi': ['warn'],
+            '@stylistic/no-floating-decimal': ['warn'],
+            '@stylistic/no-multiple-empty-lines': ['warn', { max: 1, maxEOF: 0 }],
+            '@stylistic/operator-linebreak': ['warn', 'before'],
+            '@stylistic/padded-blocks': ['warn', 'never'],
+            '@stylistic/quote-props': ['warn', 'consistent-as-needed'],
+            '@stylistic/quotes': ['warn', 'single'],
+            '@stylistic/semi': ['warn'],
+            '@stylistic/semi-style': ['warn'],
+            '@stylistic/spaced-comment': ['warn'],
 
             'jsdoc/check-access': ['warn'],
             'jsdoc/check-alignment': ['warn'],
