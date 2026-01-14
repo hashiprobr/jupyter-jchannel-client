@@ -9,16 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Setup Node.js 22.x
-      uses: actions/setup-node@v4.4.0
+    - name: Setup
+      uses: actions/setup-node@v6.1.0
       with:
-        node-version: 22.x
+        node-version: 24.x
 
     - name: Checkout
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v6.0.1
 
     - name: Install
-      run: npm install
+      run: npm ci
 
     - name: Test
       run: npm test -- --silent --coverage
